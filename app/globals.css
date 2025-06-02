@@ -78,6 +78,286 @@
     font-size: clamp(2rem, 12vw, 4rem) !important;
     line-height: 1 !important;
   }
+  
+  /* 修复圆角矩形过大问题 - 让容器更紧凑 */
+  .max-w-xs, .max-w-sm, .max-w-md, .max-w-lg, .max-w-xl, 
+  .max-w-2xl, .max-w-3xl, .max-w-4xl, .max-w-5xl, 
+  .max-w-6xl, .max-w-7xl {
+    max-width: calc(100vw - 2rem) !important;
+    margin-left: 1rem !important;
+    margin-right: 1rem !important;
+  }
+  
+  /* 减少过大的padding，让内容和容器更协调 */
+  .p-8, .p-10, .p-12, .p-16 {
+    padding: 0.75rem !important;
+  }
+  
+  .px-8, .px-10, .px-12, .px-16 {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+  }
+  
+  .py-8, .py-10, .py-12, .py-16, .py-20, .py-24 {
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+  }
+  
+  /* 增加合适的边距，避免贴边 */
+  .container {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+  
+  /* 调整section间距，避免元素贴边 */
+  section {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    margin-bottom: 1rem !important;
+  }
+  
+  /* 许愿池卡片优化 */
+  #wishes .max-w-4xl {
+    max-width: calc(100vw - 2rem) !important;
+    margin: 1rem auto !important;
+    padding: 1rem !important;
+  }
+  
+  /* 心情选择卡片优化 */
+  #mood .grid > div {
+    padding: 1rem !important;
+    margin: 0.5rem !important;
+    min-height: auto !important;
+  }
+  
+  /* AI对话区域修复 - 固定底部输入框 */
+  .ai-chat-container {
+    position: relative !important;
+    min-height: calc(100vh - 200px) !important;
+    padding-bottom: 80px !important;
+  }
+  
+  .ai-input-container {
+    position: fixed !important;
+    bottom: 20px !important;
+    left: 1rem !important;
+    right: 1rem !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(10px) !important;
+    border-radius: 1rem !important;
+    padding: 0.75rem !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    z-index: 1000 !important;
+  }
+  
+  .ai-input-container input {
+    width: 100% !important;
+    border: none !important;
+    background: transparent !important;
+    outline: none !important;
+    font-size: 0.8rem !important;
+    padding: 0.5rem !important;
+  }
+  
+  .ai-send-button {
+    position: absolute !important;
+    right: 0.75rem !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    width: 2rem !important;
+    height: 2rem !important;
+    border-radius: 50% !important;
+    background: linear-gradient(45deg, #8B5CF6, #A855F7) !important;
+    border: none !important;
+    color: white !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  
+  /* 心愿树便利贴修复 */
+  .wish-tree-container {
+    position: relative !important;
+    width: 100% !important;
+    max-width: calc(100vw - 2rem) !important;
+    margin: 1rem auto !important;
+  }
+  
+  .wish-tree-image {
+    width: 100% !important;
+    height: auto !important;
+    max-height: 400px !important;
+    object-fit: contain !important;
+  }
+  
+  /* 便利贴样式优化 */
+  .wish-note {
+    position: absolute !important;
+    background: rgba(255, 255, 255, 0.9) !important;
+    border-radius: 0.5rem !important;
+    padding: 0.5rem !important;
+    font-size: 0.7rem !important;
+    line-height: 1.2 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+    transform: rotate(-5deg) !important;
+    min-width: 60px !important;
+    max-width: 100px !important;
+    word-wrap: break-word !important;
+    z-index: 10 !important;
+  }
+  
+  .wish-note:nth-child(even) {
+    transform: rotate(5deg) !important;
+  }
+  
+  /* 便利贴在树上的位置 - 使用更精确的选择器 */
+  .wish-note-1 { top: 20% !important; left: 25% !important; background: #FFE4E1 !important; }
+  .wish-note-2 { top: 30% !important; right: 20% !important; background: #E1F5FE !important; }
+  .wish-note-3 { top: 45% !important; left: 15% !important; background: #F1F8E9 !important; }
+  .wish-note-4 { top: 55% !important; right: 25% !important; background: #FFF3E0 !important; }
+  .wish-note-5 { top: 65% !important; left: 30% !important; background: #F3E5F5 !important; }
+  .wish-note-6 { top: 40% !important; left: 45% !important; background: #E8F5E8 !important; }
+  
+  /* 树形便利贴的特殊样式 */
+  .tree-sticky-note {
+    position: absolute !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    border-radius: 6px !important;
+    padding: 6px !important;
+    font-size: 10px !important;
+    line-height: 1.1 !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
+    min-width: 50px !important;
+    max-width: 80px !important;
+    word-wrap: break-word !important;
+    z-index: 15 !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  }
+  
+  /* 故事模块卡片优化 */
+  #stories .p-12 {
+    padding: 1rem !important;
+    margin: 1rem !important;
+  }
+  
+  #stories .min-h-\[400px\] {
+    min-height: auto !important;
+    height: auto !important;
+  }
+  
+  /* 音乐模块卡片优化 */
+  #music .max-w-2xl, #music .max-w-3xl {
+    max-width: calc(100vw - 2rem) !important;
+    margin: 1rem auto !important;
+    padding: 1rem !important;
+  }
+  
+  /* 通用卡片内容优化 */
+  .card-content {
+    padding: 0.75rem !important;
+    margin: 0.5rem 0 !important;
+  }
+  
+  /* 防止文本内容过少时卡片过大 */
+  .text-content {
+    min-height: auto !important;
+    line-height: 1.5 !important;
+  }
+  
+  /* 按钮容器优化 */
+  .button-container {
+    padding: 0.5rem !important;
+    margin: 0.5rem 0 !important;
+    display: flex !important;
+    justify-content: center !important;
+    gap: 0.5rem !important;
+  }
+  
+  /* 输入框容器优化 */
+  .input-container {
+    margin: 1rem !important;
+    padding: 0.75rem !important;
+  }
+  
+  textarea.w-full {
+    min-height: 80px !important;
+    resize: vertical !important;
+  }
+  
+  /* 心情选择按钮优化 */
+  .mood-button {
+    padding: 1rem 0.75rem !important;
+    margin: 0.25rem !important;
+    min-height: 60px !important;
+    font-size: 0.8rem !important;
+  }
+  
+  /* 许愿展示卡片优化 */
+  .wish-card {
+    padding: 0.75rem !important;
+    margin: 0.5rem 0 !important;
+    border-radius: 0.75rem !important;
+  }
+  
+  /* 内心留言卡片优化 */
+  .inner-message-card {
+    padding: 0.75rem !important;
+    margin: 0.5rem 0 !important;
+    border-radius: 0.75rem !important;
+  }
+
+  /* 增强容器边距修复 */
+  .mobile-container-fix {
+    max-width: calc(100vw - 2rem) !important;
+    margin: 1rem auto !important;
+    padding: 1rem !important;
+  }
+
+  /* 卡片内容紧凑化 */
+  .compact-card {
+    padding: 0.75rem !important;
+    margin: 0.5rem 0 !important;
+    border-radius: 1rem !important;
+  }
+
+  /* 按钮和文本紧凑化 */
+  .compact-text {
+    font-size: 0.8rem !important;
+    line-height: 1.4 !important;
+  }
+
+  .compact-button {
+    padding: 0.6rem 0.8rem !important;
+    font-size: 0.75rem !important;
+    min-height: 40px !important;
+  }
+}
+
+/* 专门针对心愿树的修复 */
+@media (max-width: 640px) {
+  /* 确保心愿树容器正确 */
+  .wish-tree-section {
+    padding: 1rem !important;
+    margin: 1rem 0 !important;
+  }
+  
+  /* 心愿树标题 */
+  .wish-tree-title {
+    font-size: 1.4rem !important;
+    margin-bottom: 1rem !important;
+    text-align: center !important;
+  }
+  
+  /* 许愿输入区域 */
+  .wish-input-area {
+    background: rgba(255, 255, 255, 0.9) !important;
+    border-radius: 1rem !important;
+    padding: 1rem !important;
+    margin: 1rem 0 !important;
+    backdrop-filter: blur(10px) !important;
+  }
 }
 
 /* 平板端视口适配 */

@@ -2,6 +2,247 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 默认字体和基础样式 */
+html {
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  scroll-behavior: smooth;
+}
+
+/* 移动端优化 */
+@media (max-width: 640px) {
+  /* 确保所有元素不会超出屏幕宽度 */
+  * {
+    max-width: 100vw;
+    box-sizing: border-box;
+  }
+  
+  /* 移动端容器优化 */
+  .container {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+  
+  /* 移动端文字缩放 */
+  h1 {
+    font-size: 2.5rem !important;
+    line-height: 1.2 !important;
+  }
+  
+  h2 {
+    font-size: 2rem !important;
+    line-height: 1.3 !important;
+  }
+  
+  h3 {
+    font-size: 1.5rem !important;
+    line-height: 1.4 !important;
+  }
+  
+  /* 移动端按钮优化 */
+  button {
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+  
+  /* 移动端输入框优化 */
+  input, textarea {
+    font-size: 16px !important; /* 防止iOS自动缩放 */
+    -webkit-appearance: none;
+  }
+  
+  /* 移动端图片优化 */
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+  
+  /* 移动端导航栏优化 */
+  nav {
+    padding: 0.5rem !important;
+  }
+  
+  /* 移动端内容区间距优化 */
+  section {
+    padding-top: 2rem !important;
+    padding-bottom: 2rem !important;
+  }
+}
+
+/* 中等屏幕优化 */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .container {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+  
+  section {
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+  }
+}
+
+/* 动画优化 */
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(2deg); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-slow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes flow {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes music-bar {
+  0%, 100% { height: 8px; }
+  50% { height: 40px; }
+}
+
+@keyframes bg-gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.6s ease-out forwards;
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 3s ease-in-out infinite;
+}
+
+.animate-rotate {
+  animation: rotate 20s linear infinite;
+}
+
+.animate-flow {
+  animation: flow 3s ease-in-out infinite;
+}
+
+.animate-music-bar {
+  animation: music-bar 0.6s ease-in-out infinite alternate;
+}
+
+.bg-gradient-animation {
+  animation: bg-gradient 6s ease-in-out infinite;
+}
+
+.scroll-animate {
+  opacity: 0;
+  transform: translateY(50px);
+  transition: all 0.8s ease-out;
+}
+
+.scroll-animate.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* 自定义滚动条 */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(168, 85, 247, 0.5) rgba(255, 255, 255, 0.1);
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, #f472b6, #a855f7);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, #ec4899, #9333ea);
+}
+
+/* 移动端触摸优化 */
+@media (max-width: 640px) {
+  /* 增大可点击区域 */
+  a, button {
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* 优化文本可读性 */
+  p, span {
+    line-height: 1.6;
+  }
+  
+  /* 防止水平滚动 */
+  body {
+    overflow-x: hidden;
+  }
+  
+  /* 移动端卡片优化 */
+  [class*="bg-gradient-to"] {
+    padding: 1rem !important;
+    margin: 0.5rem !important;
+  }
+  
+  /* 移动端网格优化 */
+  [class*="grid-cols"] {
+    grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+  }
+  
+  /* 移动端间距优化 */
+  [class*="space-x"] > * + * {
+    margin-left: 0.5rem !important;
+  }
+  
+  [class*="space-y"] > * + * {
+    margin-top: 1rem !important;
+  }
+}
+
+/* 极小屏幕优化 */
+@media (max-width: 320px) {
+  .container {
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+  }
+  
+  h1 {
+    font-size: 2rem !important;
+  }
+  
+  h2 {
+    font-size: 1.5rem !important;
+  }
+  
+  h3 {
+    font-size: 1.25rem !important;
+  }
+}
+
 @layer base {
   html {
     scroll-behavior: smooth;

@@ -173,12 +173,29 @@ textarea {
 
 /* 修复滚动触发动画 */
 .scroll-animate {
+  opacity: 1;
+  transform: translateY(0);
+  transition: all 1s ease-out;
+}
+
+.scroll-animate.fade-in-hidden {
   opacity: 0;
   transform: translateY(50px);
-  transition: all 1s ease-out;
 }
 
 .scroll-animate.visible {
   opacity: 1;
   transform: translateY(0);
+}
+
+/* 确保内容可见 */
+.min-h-screen {
+  min-height: 100vh;
+  display: block;
+}
+
+/* 修复可能的z-index问题 */
+.relative.z-10 {
+  position: relative;
+  z-index: 10;
 }

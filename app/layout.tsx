@@ -6,7 +6,7 @@ import "./globals.css"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Angel's Heart Station - 心灵驿站",
+  title: "Angelzhengjy的心灵驿站",
   description: "A healing sanctuary for souls seeking warmth and tranquility",
     generator: 'v0.dev'
 }

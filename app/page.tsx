@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
+import Link from "next/link"
 
 // Simple icon components to replace lucide-react
 const Heart = ({ className = "w-6 h-6" }: { className?: string }) => (
@@ -91,6 +92,20 @@ const Eye = ({ className = "w-6 h-6" }: { className?: string }) => (
   </svg>
 )
 
+// 滑雪图标组件
+const Skiing = ({ className = "w-6 h-6" }: { className?: string }) => (
+  <svg className={className} fill="currentColor" viewBox="0 0 24 24">
+    <path d="M13 3c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm-2.2 8.6L15 13l1.2-1.4c.4-.5 1.1-.6 1.6-.2.5.4.6 1.1.2 1.6L16.7 15l2.1 2.1c.4.4.4 1 0 1.4-.2.2-.5.3-.7.3s-.5-.1-.7-.3L15 16.1l-2.4 2.8c-.4.5-1.1.6-1.6.2-.5-.4-.6-1.1-.2-1.6L12.1 16l-1.7-1.7-3.2 3.2c-.2.2-.5.3-.7.3s-.5-.1-.7-.3c-.4-.4-.4-1 0-1.4l3.2-3.2L7.3 11l-2.1 2.1c-.4.4-1 .4-1.4 0-.2-.2-.3-.5-.3-.7s.1-.5.3-.7L5.2 10.3l1.4-1.2c.5-.4 1.2-.3 1.6.2l.6.8 2-2.4c.4-.5 1.1-.5 1.6-.1.5.4.5 1.1.1 1.6l-1.7 2.4z"/>
+  </svg>
+)
+
+// 小羊图标组件
+const Sheep = ({ className = "w-6 h-6" }: { className?: string }) => (
+  <svg className={className} fill="currentColor" viewBox="0 0 24 24">
+    <path d="M20 8c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zM4 8c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm8-2c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm4 2c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm-8 0c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm4 2c-2.76 0-5 2.24-5 5v3c0 1.1.9 2 2 2h6c1.1 0 2-.9 2-2v-3c0-2.76-2.24-5-5-5zm-2 8v-1h4v1h-4zm-1-2v-1c0-1.66 1.34-3 3-3s3 1.34 3 3v1h-6z"/>
+  </svg>
+)
+
 // 可爱的小动物SVG组件
 const CuteBunny = ({ className = "w-8 h-8" }: { className?: string }) => (
   <svg className={`${className} animate-float`} viewBox="0 0 100 100" fill="none">
@@ -161,27 +176,33 @@ const CuteFox = ({ className = "w-8 h-8" }: { className?: string }) => (
   </svg>
 )
 
-const FloatingPetals = () => (
-  <>
-    {[...Array(12)].map((_, i) => (
-      <div
-        key={i}
-        className="absolute w-3 h-3 bg-gradient-to-br from-pink-300/40 to-rose-300/40 rounded-full blur-sm animate-float"
-        style={{
-          left: `${Math.random() * 100}%`,
-          top: `${Math.random() * 100}%`,
-          animationDelay: `${Math.random() * 5}s`,
-          animationDuration: `${8 + Math.random() * 4}s`,
-        }}
-      />
-    ))}
-  </>
-)
+const FloatingPetals = ({ isClient }: { isClient: boolean }) => {
+  if (!isClient) return null
+  
+  return (
+    <>
+      {[...Array(12)].map((_, i) => (
+        <div
+          key={i}
+          className="absolute w-3 h-3 bg-gradient-to-br from-pink-300/40 to-rose-300/40 rounded-full blur-sm animate-float"
+          style={{
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+            animationDelay: `${Math.random() * 5}s`,
+            animationDuration: `${8 + Math.random() * 4}s`,
+          }}
+        />
+      ))}
+    </>
+  )
+}
 
 export default function AngelHeartStation() {
   // 在组件顶部添加
   const [fadeIn, setFadeIn] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [isFirstVisit, setIsFirstVisit] = useState(true)
+  const [isClient, setIsClient] = useState(false)
   console.log("Rendering with isLoading:", isLoading, "fadeIn:", fadeIn)
 
   const [selectedMood, setSelectedMood] = useState<string | null>(null)
@@ -291,6 +312,22 @@ export default function AngelHeartStation() {
   const observerRef = useRef<IntersectionObserver | null>(null)
 
   useEffect(() => {
+    // 设置客户端渲染状态
+    setIsClient(true)
+    
+    // 检查是否是首次访问
+    const hasVisited = sessionStorage.getItem('hasVisitedMain')
+    if (hasVisited) {
+      // 如果已经访问过，直接显示内容，不播放加载动画
+      setIsLoading(false)
+      setFadeIn(true)
+      setIsFirstVisit(false)
+      return
+    }
+
+    // 首次访问时播放加载动画
+    sessionStorage.setItem('hasVisitedMain', 'true')
+    
     // 进场动画逻辑
     const loadingTimer = setInterval(() => {
       setLoadingProgress((prev) => {
@@ -300,6 +337,7 @@ export default function AngelHeartStation() {
             setIsLoading(false)
             setTimeout(() => {
               setFadeIn(true)
+              setIsFirstVisit(false)
             }, 100)
           }, 500)
           return 100
@@ -500,7 +538,7 @@ export default function AngelHeartStation() {
         <div className="fixed inset-0 z-[100] bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 flex items-center justify-center">
           {/* 背景粒子效果 */}
           <div className="absolute inset-0">
-            {[...Array(20)].map((_, i) => (
+            {isClient && [...Array(20)].map((_, i) => (
               <div
                 key={i}
                 className="absolute w-2 h-2 bg-gradient-to-br from-pink-300/60 to-purple-300/60 rounded-full animate-float"
@@ -544,7 +582,7 @@ export default function AngelHeartStation() {
                 className="text-4xl font-bold bg-gradient-to-r from-teal-500 via-cyan-500 to-indigo-500 bg-clip-text text-transparent"
                 style={{ fontFamily: "'Comic Sans MS', cursive" }}
               >
-                Angel&apos;s Heart Station
+                Angelzhengjy的心灵驿站
               </h2>
               <p className="text-xl text-gray-600 mt-4 animate-fadeIn" style={{ animationDelay: "1s" }}>
                 心灵驿站正在为你准备温暖的空间...
@@ -618,11 +656,24 @@ export default function AngelHeartStation() {
         <div className="contents">
           {/* 浪漫梦幻背景 */}
           <div className="fixed inset-0">
-            <div className="absolute inset-0 bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">
-              <div className="absolute inset-0 bg-gradient-to-tr from-yellow-50/60 via-transparent to-green-50/60"></div>
-              <div className="absolute inset-0 bg-gradient-to-bl from-indigo-50/40 via-transparent to-rose-50/40"></div>
+            {/* 背景图片层 */}
+            <div 
+              className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+              style={{
+                backgroundImage: "url('/hero.jpg')",
+                opacity: 1
+              }}
+            />
+            
+            {/* 渐变覆盖层，让原有元素更突出 */}
+            <div className="absolute inset-0 bg-gradient-to-br from-pink-50/30 via-purple-50/30 to-blue-50/30">
+              <div className="absolute inset-0 bg-gradient-to-tr from-yellow-50/20 via-transparent to-green-50/20"></div>
+              <div className="absolute inset-0 bg-gradient-to-bl from-indigo-50/15 via-transparent to-rose-50/15"></div>
             </div>
-            <div className="absolute inset-0 backdrop-blur-[0.3px] bg-white/20"></div>
+            
+            {/* 混合层 */}
+            <div className="absolute inset-0 backdrop-blur-[0.2px] bg-white/10"></div>
+            
             <div
               className="absolute top-20 left-16 w-32 h-32 bg-gradient-to-br from-pink-200/20 to-purple-200/20 rounded-full blur-2xl animate-float"
               style={{ animationDuration: "15s" }}
@@ -635,7 +686,7 @@ export default function AngelHeartStation() {
               className="absolute bottom-32 left-1/4 w-40 h-40 bg-gradient-to-br from-green-200/15 to-yellow-200/15 rounded-full blur-3xl animate-float"
               style={{ animationDuration: "18s", animationDelay: "6s" }}
             />
-            <FloatingPetals />
+            <FloatingPetals isClient={isClient} />
           </div>
 
           {/* 其余内容保持不变 */}
@@ -655,7 +706,7 @@ export default function AngelHeartStation() {
                     <CuteBunny className="w-10 h-10 text-pink-400" />
                   </div>
                   <div className="text-2xl font-bold bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 bg-clip-text text-transparent">
-                    Angel&apos;s Heart Station
+                    Angelzhengjy的心灵驿站
                   </div>
                   <div className="animate-float" style={{ animationDuration: "5s", animationDelay: "2.5s" }}>
                     <CuteCat className="w-10 h-10 text-purple-400" />
@@ -663,23 +714,41 @@ export default function AngelHeartStation() {
                 </div>
                 <div className="flex space-x-3">
                   {[
-                    { name: "首页", Icon: Sparkles, animal: CuteBird },
-                    { name: "心情", Icon: Heart, animal: CuteFox },
-                    { name: "许愿", Icon: Star, animal: CuteBunny },
-                    { name: "故事", Icon: MessageCircle, animal: CuteCat },
-                    { name: "音乐", Icon: Music, animal: CuteBird },
+                    { name: "首页", Icon: Sparkles, animal: CuteBird, href: "#home" },
+                    { name: "心情", Icon: Heart, animal: CuteFox, href: "#mood" },
+                    { name: "许愿", Icon: Star, animal: CuteBunny, href: "#wishes" },
+                    { name: "故事", Icon: MessageCircle, animal: CuteCat, href: "#stories" },
+                    { name: "音乐", Icon: Music, animal: CuteBird, href: "#music" },
+                    { name: "滑雪", Icon: Skiing, animal: CuteFox, href: "/skiing" },
+                    { name: "数羊", Icon: Sheep, animal: CuteBunny, href: "/sheep" },
                   ].map((item, index) => (
-                    <button
-                      key={item.name}
-                      className={`group relative px-5 py-3 bg-gradient-to-r from-white/40 to-white/25 backdrop-blur-sm border border-white/30 text-gray-600 hover:text-purple-600 transition-all duration-500 overflow-hidden rounded-full transform hover:scale-110 hover:-translate-y-1 active:scale-95 ${fadeIn ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-8"}`}
-                      style={{ transitionDelay: `${index * 100}ms` }}
-                    >
-                      <div className="flex items-center space-x-2 relative z-10">
-                        <item.animal className="w-4 h-4" />
-                        <span className="font-medium text-sm">{item.name}</span>
-                      </div>
-                      <div className="absolute inset-0 bg-gradient-to-r from-pink-300/20 to-purple-300/20 rounded-full scale-0 group-hover:scale-100 transition-transform duration-300" />
-                    </button>
+                    item.href.startsWith("/") ? (
+                      <Link key={item.name} href={item.href}>
+                        <button
+                          className={`group relative px-3 py-2 md:px-5 md:py-3 bg-gradient-to-r from-white/40 to-white/25 backdrop-blur-sm border border-white/30 text-gray-600 hover:text-purple-600 transition-all duration-500 overflow-hidden rounded-full transform hover:scale-110 hover:-translate-y-1 active:scale-95 ${fadeIn ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-8"}`}
+                          style={{ transitionDelay: `${index * 100}ms` }}
+                        >
+                          <div className="flex items-center space-x-1 md:space-x-2 relative z-10">
+                            <item.animal className="w-3 h-3 md:w-4 md:h-4" />
+                            <span className="font-medium text-xs md:text-sm">{item.name}</span>
+                          </div>
+                          <div className="absolute inset-0 bg-gradient-to-r from-pink-300/20 to-purple-300/20 rounded-full scale-0 group-hover:scale-100 transition-transform duration-300" />
+                        </button>
+                      </Link>
+                    ) : (
+                      <a key={item.name} href={item.href}>
+                        <button
+                          className={`group relative px-3 py-2 md:px-5 md:py-3 bg-gradient-to-r from-white/40 to-white/25 backdrop-blur-sm border border-white/30 text-gray-600 hover:text-purple-600 transition-all duration-500 overflow-hidden rounded-full transform hover:scale-110 hover:-translate-y-1 active:scale-95 ${fadeIn ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-8"}`}
+                          style={{ transitionDelay: `${index * 100}ms` }}
+                        >
+                          <div className="flex items-center space-x-1 md:space-x-2 relative z-10">
+                            <item.animal className="w-3 h-3 md:w-4 md:h-4" />
+                            <span className="font-medium text-xs md:text-sm">{item.name}</span>
+                          </div>
+                          <div className="absolute inset-0 bg-gradient-to-r from-pink-300/20 to-purple-300/20 rounded-full scale-0 group-hover:scale-100 transition-transform duration-300" />
+                        </button>
+                      </a>
+                    )
                   ))}
                 </div>
               </div>
@@ -688,22 +757,22 @@ export default function AngelHeartStation() {
 
           <div className="relative z-10">
             {/* 🏠 ANGEL标题区 */}
-            <section className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden pt-20">
-              <div className="absolute top-32 left-24 animate-float" style={{ animationDuration: "4s" }}>
-                <CuteBird className="w-16 h-16 text-pink-300/70" />
+            <section id="home" className="flex flex-col items-center justify-center relative overflow-hidden pt-20 pb-8">
+              <div className="absolute top-16 left-4 md:top-32 md:left-24 animate-float" style={{ animationDuration: "4s" }}>
+                <CuteBird className="w-12 h-12 md:w-16 md:h-16 text-pink-300/70" />
               </div>
               <div
-                className="absolute top-48 right-32 animate-float"
+                className="absolute top-24 right-4 md:top-48 md:right-32 animate-float"
                 style={{ animationDuration: "3s", animationDelay: "1s" }}
               >
-                <CuteFox className="w-14 h-14 text-purple-300/70" />
+                <CuteFox className="w-10 h-10 md:w-14 md:h-14 text-purple-300/70" />
               </div>
 
               <div
                 className={`text-center relative transition-all duration-1000 ${fadeIn ? "opacity-100 scale-100" : "opacity-0 scale-90"}`}
               >
                 <h1
-                  className="text-8xl md:text-[10rem] font-bold mb-8 relative bg-gradient-animation"
+                  className="text-6xl md:text-8xl lg:text-[10rem] font-bold mb-6 md:mb-8 relative bg-gradient-animation px-4"
                   style={{
                     background:
                       "linear-gradient(45deg, #fbbf24 0%, #f472b6 20%, #a855f7 40%, #3b82f6 60%, #10b981 80%, #fbbf24 100%)",
@@ -722,32 +791,36 @@ export default function AngelHeartStation() {
                 </h1>
 
                 <div
-                  className={`relative mb-16 transition-all duration-1000 delay-500 ${fadeIn ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
+                  className={`relative mb-12 md:mb-16 transition-all duration-1000 delay-500 ${fadeIn ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
                 >
-                  <p className="text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-                    看梦淋上呈敞逗洛温绿宜宫力通力力
+                  <p className="text-lg md:text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed px-4">
+                    欢迎来到Angelzhengjy的心灵驿站，这里是温暖治愈的小天地
                     <br />
-                    <span className="text-xl text-purple-500 font-medium">是理心心晃的亮洛，温暖</span>
+                    <span className="text-base md:text-xl text-purple-500 font-medium">让心灵得到安慰，让情感得到温暖</span>
                   </p>
                 </div>
 
                 <div
                   className={`relative group cursor-pointer transition-all duration-1000 delay-700 ${fadeIn ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"}`}
                 >
-                  <h3 className="text-3xl font-bold text-gray-700 mb-8">我的艺术空间</h3>
+                  <h3 className="text-2xl md:text-3xl font-bold text-gray-700 mb-6 md:mb-8 px-4">我的艺术空间</h3>
                   <div
-                    className="w-[600px] h-80 mx-auto bg-gradient-to-br from-white/50 to-white/30 backdrop-blur-xl border border-white/40 flex items-center justify-center relative overflow-hidden hover:scale-102 hover:-translate-y-2 transition-transform duration-300"
+                    className="w-[90vw] max-w-[720px] h-64 md:h-96 mx-auto bg-gradient-to-br from-white/50 to-white/30 backdrop-blur-xl border border-white/40 flex items-center justify-center relative overflow-hidden hover:scale-102 hover:-translate-y-2 transition-transform duration-300"
                     style={{
                       borderRadius: "50% 50% 50% 50% / 60% 60% 40% 40%",
                       boxShadow: "0 20px 40px rgba(168, 85, 247, 0.1)",
                     }}
                   >
                     <div className="text-center text-gray-500 relative z-10">
-                      <div className="animate-rotate">
-                        <Sparkles className="w-20 h-20 mx-auto mb-6 opacity-60" />
-                      </div>
-                      <p className="text-xl font-semibold mb-3">点击上传您的精美插画</p>
-                      <p className="text-lg text-gray-400">支持 SVG、PNG、JPG 格式</p>
+                      <img 
+                        src="/angel-portrait.jpg" 
+                        alt="Angel Portrait" 
+                        className="w-full h-full object-cover object-center"
+                        style={{ 
+                          borderRadius: "inherit",
+                          objectPosition: "center 60%"  // 调整为显示更完整的人物
+                        }}
+                      />
                     </div>
 
                     <div className="absolute top-8 left-12 animate-float" style={{ animationDuration: "4s" }}>
@@ -770,16 +843,16 @@ export default function AngelHeartStation() {
             </section>
 
             {/* 🌟 温暖许愿池 */}
-            <section className="py-24 relative">
-              <div className="container mx-auto px-8">
-                <div className="text-center mb-20 scroll-animate">
+            <section id="wishes" className="relative">
+              <div className="container mx-auto px-4 md:px-8">
+                <div className="text-center mb-16 md:mb-20 scroll-animate">
                   <h2
-                    className="text-5xl font-bold bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 bg-clip-text text-transparent mb-8"
+                    className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 bg-clip-text text-transparent mb-6 md:mb-8 px-4"
                     style={{ fontFamily: "'Comic Sans MS', cursive" }}
                   >
                     温暖许愿池
                   </h2>
-                  <p className="text-xl text-gray-600 leading-relaxed">在这里许下心愿，让美好的愿望传递给更多人</p>
+                  <p className="text-lg md:text-xl text-gray-600 leading-relaxed px-4">在这里许下心愿，让美好的愿望传递给更多人</p>
                 </div>
 
                 <div
@@ -932,16 +1005,16 @@ export default function AngelHeartStation() {
             </section>
 
             {/* 📚 治愈故事时光 */}
-            <section className="py-24 relative">
-              <div className="container mx-auto px-8">
-                <div className="text-center mb-20 scroll-animate">
+            <section id="stories" className="py-16 md:py-24 relative">
+              <div className="container mx-auto px-4 md:px-8">
+                <div className="text-center mb-16 md:mb-20 scroll-animate">
                   <h2
-                    className="text-5xl font-bold bg-gradient-to-r from-green-500 via-blue-500 to-purple-500 bg-clip-text text-transparent mb-8"
+                    className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-green-500 via-blue-500 to-purple-500 bg-clip-text text-transparent mb-6 md:mb-8 px-4"
                     style={{ fontFamily: "'Comic Sans MS', cursive" }}
                   >
                     治愈故事时光
                   </h2>
-                  <p className="text-xl text-gray-600 leading-relaxed">每一个故事都是一束温暖的光，照亮心灵的角落</p>
+                  <p className="text-lg md:text-xl text-gray-600 leading-relaxed px-4">每一个故事都是一束温暖的光，照亮心灵的角落</p>
                 </div>
 
                 <div className="max-w-5xl mx-auto relative">
@@ -1018,20 +1091,20 @@ export default function AngelHeartStation() {
             </section>
 
             {/* 🎵 治愈音乐角落 */}
-            <section className="py-24 relative">
-              <div className="container mx-auto px-8">
-                <div className="text-center mb-20 scroll-animate">
+            <section id="music" className="py-16 md:py-24 relative">
+              <div className="container mx-auto px-4 md:px-8">
+                <div className="text-center mb-16 md:mb-20 scroll-animate">
                   <h2
-                    className="text-5xl font-bold bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 bg-clip-text text-transparent mb-8"
+                    className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 bg-clip-text text-transparent mb-6 md:mb-8 px-4"
                     style={{ fontFamily: "'Comic Sans MS', cursive" }}
                   >
                     治愈音乐角落
                   </h2>
-                  <p className="text-xl text-gray-600 leading-relaxed">让音乐的旋律抚慰疲惫的心灵</p>
+                  <p className="text-lg md:text-xl text-gray-600 leading-relaxed px-4">让音乐的旋律抚慰疲惫的心灵</p>
                 </div>
 
                 <div
-                  className="max-w-3xl mx-auto p-12 bg-gradient-to-br from-white/50 to-white/30 backdrop-blur-xl border border-white/40 relative overflow-hidden scroll-animate"
+                  className="max-w-2xl md:max-w-3xl mx-auto p-8 md:p-12 bg-gradient-to-br from-white/50 to-white/30 backdrop-blur-xl border border-white/40 relative overflow-hidden scroll-animate"
                   style={{
                     borderRadius: "40% 60% 60% 40% / 30% 70% 30% 70%",
                     boxShadow: "0 25px 50px rgba(234, 88, 12, 0.1)",
@@ -1167,13 +1240,17 @@ export default function AngelHeartStation() {
                       </div>
 
                       <div
-                        className="w-24 h-24 bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center border-2 border-white/50 hover:scale-105 hover:rotate-3 transition-transform duration-300"
+                        className="w-24 h-24 bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center border-2 border-white/50 hover:scale-105 hover:rotate-3 transition-transform duration-300 overflow-hidden"
                         style={{ borderRadius: "20px" }}
                       >
-                        <div className="text-center text-gray-500">
-                          <CuteFox className="w-8 h-8 mx-auto mb-1 opacity-60" />
-                          <p className="text-xs">AI头像</p>
-                        </div>
+                        <img 
+                          src="/lain.jpg" 
+                          alt="Lain Avatar" 
+                          className="w-full h-full object-cover object-center"
+                          style={{ 
+                            objectPosition: "center 30%"  // 调整位置确保脸部居中显示
+                          }}
+                        />
                       </div>
                     </div>
 
@@ -1250,7 +1327,7 @@ export default function AngelHeartStation() {
               </div>
             </section>
 
-            {/* 💭 内心留言区（圣诞树便签墙） */}
+            {/* 💭 内心留言区（心愿树便签墙） */}
             <section className="py-24 relative">
               <div className="container mx-auto px-8">
                 <div className="text-center mb-20 scroll-animate">
@@ -1264,14 +1341,14 @@ export default function AngelHeartStation() {
                     表达你的小困扰、小心情、匿名秘密...
                     <br />
                     <span className="text-lg text-teal-500 font-medium">
-                      在这棵温暖的圣诞树下，每一份心声都会被温柔对待
+                      在这棵温暖的心愿树下，每一份心声都会被温柔对待
                     </span>
                   </p>
                 </div>
 
-                {/* 左右布局：圣诞树 + 心情便签输入 */}
+                {/* 左右布局：心愿树 + 心情便签输入 */}
                 <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-12 items-start">
-                  {/* 左侧：圣诞树留言墙 */}
+                  {/* 左侧：心愿树留言墙 */}
                   <div className="relative">
                     <div
                       className="relative min-h-[700px] bg-gradient-to-br from-teal-100 via-cyan-50 to-blue-50 p-8 scroll-animate overflow-hidden"
@@ -1281,15 +1358,15 @@ export default function AngelHeartStation() {
                       }}
                     >
                       {/* 飘落的雪花 */}
-                      {[...Array(12)].map((_, i) => (
+                      {isClient && [...Array(12)].map((_, i) => (
                         <div
                           key={i}
                           className="absolute text-white/60 animate-float pointer-events-none"
                           style={{
                             left: `${Math.random() * 100}%`,
                             top: `${Math.random() * 100}%`,
-                            animationDelay: `${Math.random() * 5}s`,
-                            animationDuration: `${6 + Math.random() * 4}s`,
+                            animationDelay: `${Math.random() * 3}s`,
+                            animationDuration: `${6 + Math.random() * 3}s`,
                             fontSize: `${12 + Math.random() * 8}px`,
                           }}
                         >
@@ -1297,127 +1374,111 @@ export default function AngelHeartStation() {
                         </div>
                       ))}
 
-                      {/* 圣诞树主体 */}
+                      {/* 留言树主体 */}
                       <div className="relative flex flex-col items-center pt-8">
-                        {/* 树顶装饰 */}
-                        <div className="relative mb-4 animate-float" style={{ animationDuration: "4s" }}>
-                          <div
-                            className="w-12 h-12 bg-gradient-to-br from-yellow-300 to-orange-300 flex items-center justify-center text-xl animate-pulse-slow"
-                            style={{ borderRadius: "50% 50% 50% 50% / 60% 60% 40% 40%" }}
-                          >
-                            🎀
-                          </div>
-                        </div>
-
-                        {/* 圣诞树层级 */}
-                        {[1, 2, 3, 4].map((layer, layerIndex) => (
-                          <div key={layer} className="relative mb-2">
-                            {/* 树叶层 */}
-                            <div
-                              className={`bg-gradient-to-br from-green-400 via-green-500 to-green-600 relative`}
-                              style={{
-                                width: `${100 + layerIndex * 60}px`,
-                                height: `${60 + layerIndex * 15}px`,
-                                borderRadius: "50% 50% 50% 50% / 60% 60% 40% 40%",
-                                clipPath: "polygon(0% 100%, 50% 0%, 100% 100%)",
-                              }}
-                            >
-                              {/* 彩灯装饰 */}
-                              {[...Array(2 + layerIndex)].map((_, lightIndex) => (
+                        {/* 留言树图片 - 放大30% */}
+                        <div className="relative mb-2">
+                          <img 
+                            src="/tree.png" 
+                            alt="留言树" 
+                            className="w-[624px] h-[749px] object-contain"
+                            style={{ filter: 'drop-shadow(0 6px 12px rgba(0,0,0,0.3))' }}
+                          />
+                          
+                          {/* 在树上放置便签纸留言 - 调整位置稍微靠近树 */}
+                          {innerMessages.slice(0, 8).map((message, messageIndex) => {
+                            // 调整位置，稍微靠近树一点
+                            const positions = [
+                              { left: 30, top: 15 }, // 上层左侧
+                              { left: 62, top: 18 }, // 上层右侧
+                              { left: 25, top: 25 }, // 中上层左侧
+                              { left: 68, top: 28 }, // 中上层右侧
+                              { left: 22, top: 38 }, // 中层左侧
+                              { left: 72, top: 40 }, // 中层右侧
+                              { left: 32, top: 52 }, // 下层左侧
+                              { left: 60, top: 55 }  // 下层右侧
+                            ]
+                            
+                            const position = positions[messageIndex] || positions[0]
+                            
+                            return (
+                              <div
+                                key={message.id}
+                                className={`absolute cursor-pointer transform hover:scale-110 hover:rotate-2 hover:-translate-y-2 transition-all duration-300 ${hugAnimation === message.id ? "animate-bounce" : ""}`}
+                                style={{
+                                  left: `${position.left}%`,
+                                  top: `${position.top}%`,
+                                  transform: `rotate(${-3 + Math.random() * 6}deg)`,
+                                  zIndex: 20
+                                }}
+                                onClick={() => setSelectedMessage(message)}
+                              >
                                 <div
-                                  key={lightIndex}
-                                  className={`absolute w-2 h-2 rounded-full animate-pulse-slow`}
+                                  className={`w-20 h-20 bg-gradient-to-br ${message.color} p-2 shadow-lg border border-white/50 relative overflow-hidden hover:shadow-xl`}
                                   style={{
-                                    left: `${25 + lightIndex * 25}%`,
-                                    top: `${60 + Math.random() * 20}%`,
-                                    backgroundColor: ["#fbbf24", "#f472b6", "#a855f7", "#3b82f6", "#10b981"][
-                                      lightIndex % 5
-                                    ],
-                                    animationDelay: `${lightIndex * 0.5}s`,
-                                    animationDuration: "2s",
-                                    boxShadow: `0 0 8px ${["#fbbf24", "#f472b6", "#a855f7", "#3b82f6", "#10b981"][lightIndex % 5]}`,
+                                    borderRadius: "8px",
+                                    transform: "perspective(100px) rotateX(5deg)",
+                                    boxShadow: "0 4px 12px rgba(0,0,0,0.2)"
                                   }}
-                                />
-                              ))}
-                            </div>
-
-                            {/* 便签纸留言 */}
-                            {innerMessages
-                              .filter((_, index) => index % 4 === layerIndex)
-                              .slice(0, 2) // 每层最多显示2个便签
-                              .map((message, messageIndex) => (
-                                <div
-                                  key={message.id}
-                                  className={`absolute cursor-pointer transform hover:scale-110 hover:rotate-2 hover:-translate-y-2 transition-all duration-300 ${hugAnimation === message.id ? "animate-bounce" : ""}`}
-                                  style={{
-                                    left: `${messageIndex === 0 ? 10 : 70}%`,
-                                    top: `${30 + Math.random() * 40}%`,
-                                    transform: `rotate(${Math.random() * 20 - 10}deg)`,
-                                  }}
-                                  onClick={() => setSelectedMessage(message)}
                                 >
-                                  <div
-                                    className={`w-20 h-20 bg-gradient-to-br ${message.color} p-2 shadow-lg border border-white/50 relative overflow-hidden hover:shadow-xl`}
-                                    style={{
-                                      borderRadius: "6px",
-                                      transform: "perspective(100px) rotateX(5deg)",
-                                    }}
-                                  >
-                                    <p className="text-xs text-gray-700 font-medium leading-tight">
-                                      {message.text.length > 15 ? `${message.text.substring(0, 15)}...` : message.text}
-                                    </p>
+                                  <p className="text-xs text-gray-700 font-medium leading-tight">
+                                    {message.text.length > 15 ? `${message.text.substring(0, 15)}...` : message.text}
+                                  </p>
 
-                                    {/* 便签纸纹理 */}
-                                    <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent pointer-events-none" />
+                                  {/* 便签纸纹理 */}
+                                  <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent pointer-events-none" />
 
-                                    {/* 拥抱数量 */}
-                                    <div className="absolute bottom-1 right-1 flex items-center space-x-1">
-                                      <span className="text-xs text-pink-500">🤗</span>
-                                      <span className="text-xs text-gray-600 font-bold">{message.hugs}</span>
-                                    </div>
+                                  {/* 拥抱数量 */}
+                                  <div className="absolute bottom-1 right-1 flex items-center space-x-1">
+                                    <span className="text-xs text-pink-500">🤗</span>
+                                    <span className="text-xs text-gray-600 font-bold">{message.hugs}</span>
                                   </div>
                                 </div>
-                              ))}
-                          </div>
-                        ))}
-
-                        {/* 树干 */}
-                        <div
-                          className="w-8 h-12 bg-gradient-to-br from-amber-600 to-amber-800 mt-2"
-                          style={{ borderRadius: "6px 6px 3px 3px" }}
-                        />
+                              </div>
+                            )
+                          })}
+                        </div>
                       </div>
 
-                      {/* 可爱动物装饰 */}
-                      <div className="absolute bottom-6 left-8 animate-float" style={{ animationDuration: "5s" }}>
+                      {/* 增加更多可爱动物装饰 */}
+                      <div className="absolute bottom-8 left-12 animate-float" style={{ animationDuration: "5s" }}>
                         <CuteBunny className="w-12 h-12 text-orange-400" />
                       </div>
-                      <div
-                        className="absolute bottom-6 right-8 animate-float"
-                        style={{ animationDuration: "4s", animationDelay: "2s" }}
-                      >
+                      <div className="absolute bottom-12 right-16 animate-float" style={{ animationDuration: "4s", animationDelay: "2s" }}>
                         <CuteFox className="w-10 h-10 text-amber-500" />
                       </div>
-                      <div
-                        className="absolute bottom-12 left-1/2 transform -translate-x-1/2 animate-float"
-                        style={{ animationDuration: "6s", animationDelay: "1s" }}
-                      >
+                      <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 animate-float" style={{ animationDuration: "6s", animationDelay: "1s" }}>
                         <CuteCat className="w-8 h-8 text-teal-400" />
                       </div>
-
-                      {/* 查看全部便签按钮 */}
-                      <div className="absolute top-6 right-6">
-                        <button
-                          onClick={() => setShowAllMessages(true)}
-                          className="px-6 py-3 bg-gradient-to-r from-teal-300 to-cyan-300 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95"
-                          style={{ borderRadius: "20px" }}
-                        >
-                          <div className="flex items-center space-x-2">
-                            <Eye className="w-5 h-5" />
-                            <span>展开全部</span>
-                          </div>
-                        </button>
+                      <div className="absolute top-20 left-8 animate-float" style={{ animationDuration: "7s", animationDelay: "3s" }}>
+                        <CuteBird className="w-10 h-10 text-pink-400" />
                       </div>
+                      <div className="absolute top-32 right-12 animate-float" style={{ animationDuration: "5s", animationDelay: "1.5s" }}>
+                        <CuteBunny className="w-8 h-8 text-purple-400" />
+                      </div>
+                      <div className="absolute top-48 left-20 animate-float" style={{ animationDuration: "8s", animationDelay: "0.5s" }}>
+                        <CuteFox className="w-9 h-9 text-green-400" />
+                      </div>
+                      <div className="absolute bottom-32 right-8 animate-float" style={{ animationDuration: "6s", animationDelay: "2.5s" }}>
+                        <CuteCat className="w-11 h-11 text-blue-400" />
+                      </div>
+                      <div className="absolute top-64 right-20 animate-float" style={{ animationDuration: "4.5s", animationDelay: "3.5s" }}>
+                        <CuteBird className="w-9 h-9 text-yellow-400" />
+                      </div>
+                    </div>
+
+                    {/* 查看全部便签按钮 */}
+                    <div className="absolute top-6 right-6">
+                      <button
+                        onClick={() => setShowAllMessages(true)}
+                        className="px-6 py-3 bg-gradient-to-r from-teal-300 to-cyan-300 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95"
+                        style={{ borderRadius: "20px" }}
+                      >
+                        <div className="flex items-center space-x-2">
+                          <Eye className="w-5 h-5" />
+                          <span>展开全部</span>
+                        </div>
+                      </button>
                     </div>
                   </div>
 
@@ -1453,8 +1514,8 @@ export default function AngelHeartStation() {
                         >
                           <div className="flex items-center justify-center space-x-3">
                             <MessageCircle className="w-6 h-6" />
-                            <span>挂到圣诞树上</span>
-                            <span className="text-xl">🎄</span>
+                            <span>挂到心愿树上</span>
+                            <span className="text-xl">🌲</span>
                           </div>
                         </button>
                       </div>
@@ -1755,7 +1816,7 @@ export default function AngelHeartStation() {
                       <CuteBunny className="w-12 h-12 text-pink-500" />
                     </div>
                     <h3 className="text-4xl font-bold bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 bg-clip-text text-transparent">
-                      Angel&apos;s Heart Station
+                      Angelzhengjy的心灵驿站
                     </h3>
                     <div className="animate-float" style={{ animationDuration: "4s", animationDelay: "2s" }}>
                       <CuteFox className="w-12 h-12 text-purple-500" />
@@ -1795,7 +1856,7 @@ export default function AngelHeartStation() {
                   </div>
 
                   <p className="text-gray-500 text-lg animate-pulse-slow" style={{ animationDuration: "3s" }}>
-                    © 2024 Angel&apos;s Heart Station. Made with 💖 for healing souls.
+                    © 2024 Angelzhengjy的心灵驿站. Made with 💖 for healing souls.
                   </p>
                 </div>
               </div>

@@ -811,4 +811,512 @@ button, input, textarea {
   .mb-12, .mb-16, .mb-20 {
     margin-bottom: 0.5rem !important;
   }
-} 
+}
+
+/* iPhone 14 Pro 专用适配 (393×852px) */
+@media (max-width: 430px) {
+  /* 导航栏超级紧凑布局 */
+  nav .flex.space-x-3 {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 0.125rem !important;
+    width: 100% !important;
+    padding: 0 !important;
+  }
+  
+  nav button {
+    font-size: 0.6rem !important;
+    padding: 0.375rem 0.125rem !important;
+    min-height: 36px !important;
+    max-width: 100% !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+  }
+  
+  nav button span {
+    font-size: 0.55rem !important;
+    line-height: 1 !important;
+    display: block !important;
+  }
+  
+  nav button svg,
+  nav button .w-3,
+  nav button .w-4 {
+    width: 0.625rem !important;
+    height: 0.625rem !important;
+    flex-shrink: 0 !important;
+  }
+  
+  /* 品牌标题进一步缩小 */
+  nav .text-2xl {
+    font-size: 0.875rem !important;
+    line-height: 1.1 !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+  
+  /* 品牌区域的动物图标 */
+  nav .w-10.h-10 {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+  }
+  
+  /* ANGEL标题特别处理 */
+  .text-6xl, .text-7xl, .text-8xl, .text-9xl, .text-\[10rem\] {
+    font-size: clamp(1.75rem, 10vw, 2.5rem) !important;
+    line-height: 0.95 !important;
+    margin-bottom: 0.75rem !important;
+  }
+  
+  /* 所有大标题缩小 */
+  .text-4xl, .text-5xl {
+    font-size: clamp(1.25rem, 7vw, 1.75rem) !important;
+    line-height: 1.1 !important;
+  }
+  
+  .text-3xl {
+    font-size: clamp(1.125rem, 6vw, 1.5rem) !important;
+    line-height: 1.2 !important;
+  }
+  
+  .text-2xl {
+    font-size: clamp(1rem, 5vw, 1.25rem) !important;
+    line-height: 1.3 !important;
+  }
+  
+  /* 容器进一步缩小间距 */
+  .container {
+    padding-left: 0.375rem !important;
+    padding-right: 0.375rem !important;
+  }
+  
+  .px-8, .px-12, .px-16 {
+    padding-left: 0.375rem !important;
+    padding-right: 0.375rem !important;
+  }
+  
+  .py-8, .py-12, .py-16, .py-20 {
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
+  }
+  
+  /* 间距进一步紧凑 */
+  .mb-12, .mb-16, .mb-20 {
+    margin-bottom: 0.75rem !important;
+  }
+  
+  .mt-8, .mt-12, .mt-16 {
+    margin-top: 0.75rem !important;
+  }
+  
+  .space-x-8 > * + * {
+    margin-left: 0.5rem !important;
+  }
+  
+  .space-x-4 > * + * {
+    margin-left: 0.25rem !important;
+  }
+  
+  .space-x-3 > * + * {
+    margin-left: 0.125rem !important;
+  }
+  
+  /* 所有装饰图标统一缩小 */
+  .w-16.h-16 {
+    width: 2rem !important;
+    height: 2rem !important;
+  }
+  
+  .w-12.h-12 {
+    width: 1.5rem !important;
+    height: 1.5rem !important;
+  }
+  
+  .w-10.h-10 {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+  }
+  
+  .w-8.h-8 {
+    width: 1rem !important;
+    height: 1rem !important;
+  }
+  
+  .w-6.h-6 {
+    width: 0.875rem !important;
+    height: 0.875rem !important;
+  }
+  
+  .w-5.h-5 {
+    width: 0.75rem !important;
+    height: 0.75rem !important;
+  }
+  
+  /* 卡片和内容区域 */
+  .max-w-4xl {
+    max-width: calc(100vw - 0.75rem) !important;
+    margin: 0 0.375rem !important;
+  }
+  
+  .p-12 {
+    padding: 0.75rem !important;
+  }
+  
+  .p-6 {
+    padding: 0.5rem !important;
+  }
+  
+  /* 图片区域调整 */
+  .w-\[90vw\] {
+    width: calc(100vw - 1.5rem) !important;
+  }
+  
+  .h-64, .h-96 {
+    height: 180px !important;
+  }
+  
+  /* 输入框和按钮优化 */
+  textarea {
+    font-size: 0.875rem !important;
+    padding: 0.5rem !important;
+    min-height: 70px !important;
+  }
+  
+  button {
+    font-size: 0.75rem !important;
+    padding: 0.5rem 0.75rem !important;
+    min-height: 40px !important;
+  }
+  
+  /* 导航栏整体高度控制 */
+  nav {
+    padding: 0.25rem !important;
+  }
+  
+  nav .container {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+  }
+  
+  /* Flex布局强制不换行 */
+  .flex.items-center.justify-between {
+    flex-direction: column !important;
+    gap: 0.375rem !important;
+    align-items: center !important;
+  }
+  
+  .flex.items-center.space-x-4 {
+    gap: 0.25rem !important;
+    flex-wrap: nowrap !important;
+  }
+  
+  .flex.items-center.space-x-4 > * + * {
+    margin-left: 0.25rem !important;
+  }
+}
+
+/* iPhone 14 Pro Max 和类似大屏手机 (430px+) */
+@media (min-width: 431px) and (max-width: 640px) {
+  nav .flex.space-x-3 {
+    display: grid !important;
+    grid-template-columns: repeat(5, 1fr) !important;
+    gap: 0.25rem !important;
+  }
+  
+  nav button {
+    font-size: 0.7rem !important;
+    padding: 0.5rem 0.25rem !important;
+  }
+  
+  nav button span {
+    font-size: 0.65rem !important;
+  }
+}
+
+/* 特殊处理：确保7个按钮能在一行显示 */
+@media (max-width: 430px) {
+  /* 如果4列放不下，改为2行布局 */
+  nav .flex.space-x-3 {
+    grid-template-rows: repeat(2, auto) !important;
+    grid-auto-flow: row !important;
+  }
+  
+  /* 前4个按钮第一行，后3个按钮第二行居中 */
+  nav .flex.space-x-3 > *:nth-child(5),
+  nav .flex.space-x-3 > *:nth-child(6),
+  nav .flex.space-x-3 > *:nth-child(7) {
+    grid-column: span 1 !important;
+  }
+  
+  /* 最后一行居中对齐 */
+  nav .flex.space-x-3 > *:nth-child(5) {
+    grid-column: 2 / 3 !important;
+  }
+  
+  nav .flex.space-x-3 > *:nth-child(6) {
+    grid-column: 3 / 4 !important;
+  }
+  
+  nav .flex.space-x-3 > *:nth-child(7) {
+    grid-column: 4 / 5 !important;
+  }
+}
+
+/* 横屏模式特殊优化 */
+@media (max-height: 500px) and (orientation: landscape) and (max-width: 900px) {
+  nav .flex.space-x-3 {
+    grid-template-columns: repeat(7, 1fr) !important;
+    grid-template-rows: auto !important;
+  }
+  
+  nav button {
+    font-size: 0.65rem !important;
+    padding: 0.25rem !important;
+    min-height: 32px !important;
+  }
+  
+  .text-6xl, .text-7xl, .text-8xl, .text-9xl, .text-\[10rem\] {
+    font-size: clamp(1.5rem, 8vw, 2rem) !important;
+  }
+  
+  .h-64, .h-96 {
+    height: 120px !important;
+  }
+}
+
+/* 功能模块移动端适配 */
+@media (max-width: 430px) {
+  /* 故事模块适配 */
+  .min-h-\[400px\] {
+    min-height: 250px !important;
+  }
+  
+  /* 故事卡片 */
+  #stories .max-w-5xl {
+    max-width: calc(100vw - 1rem) !important;
+  }
+  
+  #stories .p-12 {
+    padding: 1rem !important;
+  }
+  
+  #stories .text-4xl {
+    font-size: clamp(1.25rem, 6vw, 1.75rem) !important;
+  }
+  
+  #stories .text-xl {
+    font-size: clamp(0.875rem, 4vw, 1.125rem) !important;
+    line-height: 1.6 !important;
+  }
+  
+  /* 故事导航按钮 */
+  #stories .space-x-12 {
+    gap: 1rem !important;
+  }
+  
+  #stories .space-x-12 > * + * {
+    margin-left: 0 !important;
+  }
+  
+  #stories .p-6 {
+    padding: 1rem !important;
+  }
+  
+  #stories .w-8.h-8 {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+  }
+  
+  /* 音乐模块适配 */
+  #music .max-w-2xl,
+  #music .max-w-3xl {
+    max-width: calc(100vw - 1rem) !important;
+  }
+  
+  #music .p-8,
+  #music .p-12 {
+    padding: 1rem !important;
+  }
+  
+  #music .text-3xl {
+    font-size: clamp(1.125rem, 6vw, 1.5rem) !important;
+  }
+  
+  #music .text-xl {
+    font-size: clamp(0.875rem, 4vw, 1.125rem) !important;
+  }
+  
+  /* 音乐播放按钮 */
+  #music .p-8 {
+    padding: 1.5rem !important;
+  }
+  
+  #music .w-10.h-10 {
+    width: 2rem !important;
+    height: 2rem !important;
+  }
+  
+  /* 音乐频谱 */
+  #music .space-x-2 {
+    gap: 0.125rem !important;
+  }
+  
+  #music .space-x-2 > * + * {
+    margin-left: 0 !important;
+  }
+  
+  #music .h-20 {
+    height: 60px !important;
+  }
+  
+  /* 音量控制 */
+  #music .space-x-4 {
+    gap: 0.5rem !important;
+  }
+  
+  #music .space-x-4 > * + * {
+    margin-left: 0 !important;
+  }
+  
+  #music .w-32 {
+    width: 6rem !important;
+  }
+  
+  /* AI对话模块适配 */
+  .ai-chat .max-w-4xl {
+    max-width: calc(100vw - 1rem) !important;
+  }
+  
+  /* 心情选择模块适配 */
+  #mood .grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.5rem !important;
+  }
+  
+  #mood .p-8 {
+    padding: 1rem !important;
+  }
+  
+  #mood .text-2xl {
+    font-size: clamp(1rem, 5vw, 1.25rem) !important;
+  }
+  
+  /* 许愿池模块适配 */
+  #wishes .text-4xl,
+  #wishes .text-5xl {
+    font-size: clamp(1.25rem, 7vw, 1.75rem) !important;
+  }
+  
+  /* 所有section的标题统一处理 */
+  section h2 {
+    font-size: clamp(1.25rem, 7vw, 1.75rem) !important;
+    line-height: 1.1 !important;
+    margin-bottom: 1rem !important;
+  }
+  
+  section h3 {
+    font-size: clamp(1.125rem, 6vw, 1.5rem) !important;
+    line-height: 1.2 !important;
+  }
+  
+  /* 所有section的内边距统一 */
+  section.py-16,
+  section.py-24 {
+    padding-top: 1.5rem !important;
+    padding-bottom: 1.5rem !important;
+  }
+  
+  /* 圆形装饰按钮 */
+  .w-4.h-4 {
+    width: 0.75rem !important;
+    height: 0.75rem !important;
+  }
+  
+  /* 内容区域最大宽度限制 */
+  .max-w-5xl,
+  .max-w-4xl,
+  .max-w-3xl,
+  .max-w-2xl {
+    max-width: calc(100vw - 1rem) !important;
+    margin-left: 0.5rem !important;
+    margin-right: 0.5rem !important;
+  }
+  
+  /* 所有圆角卡片统一处理 */
+  [style*="borderRadius"] {
+    border-radius: 1rem !important;
+  }
+  
+  /* 文本内容行高优化 */
+  .leading-relaxed {
+    line-height: 1.6 !important;
+  }
+  
+  /* Flex间距统一调整 */
+  .space-x-8 > * + * {
+    margin-left: 0.5rem !important;
+  }
+  
+  .space-x-6 > * + * {
+    margin-left: 0.375rem !important;
+  }
+  
+  .space-x-4 > * + * {
+    margin-left: 0.25rem !important;
+  }
+  
+  .space-x-3 > * + * {
+    margin-left: 0.125rem !important;
+  }
+  
+  .space-x-2 > * + * {
+    margin-left: 0.125rem !important;
+  }
+  
+  /* 垂直间距调整 */
+  .mb-10,
+  .mb-12,
+  .mb-16,
+  .mb-20 {
+    margin-bottom: 1rem !important;
+  }
+  
+  .mt-10,
+  .mt-12,
+  .mt-16 {
+    margin-top: 1rem !important;
+  }
+  
+  /* 聊天气泡样式适配 */
+  .chat-bubble {
+    max-width: calc(100vw - 3rem) !important;
+    word-wrap: break-word !important;
+  }
+}
+
+/* 处理特殊的复杂选择器 */
+@media (max-width: 430px) {
+  /* 确保所有绝对定位的装饰元素都缩小 */
+  .absolute {
+    transform: scale(0.7) !important;
+  }
+  
+  /* 但不影响主要布局元素 */
+  .absolute.inset-0,
+  .absolute.top-0,
+  .absolute.bottom-0,
+  .absolute.left-0,
+  .absolute.right-0 {
+    transform: none !important;
+  }
+  
+  /* 确保装饰性动物图标缩小 */
+  .absolute .w-12.h-12,
+  .absolute .w-10.h-10,
+  .absolute .w-8.h-8 {
+    width: 1rem !important;
+    height: 1rem !important;
+  }
+}

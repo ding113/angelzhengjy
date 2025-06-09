@@ -130,7 +130,7 @@ npm run dev
 
 ### 添加新的API接口
 
-1. **在 `lib/api.ts` 中添加新的API函数**
+1. **在 `lib/api` 模块中添加新的API函数**
 ```typescript
 export const newApi = {
   someAction: async (param: string): Promise<ApiResponse<SomeType>> => {
@@ -160,7 +160,7 @@ const handleAction = async () => {
 
 ### 类型定义
 
-所有API相关的类型都定义在 `lib/api.ts` 中：
+所有API相关的类型都定义在 `lib/api` 模块中：
 - `Wish` - 心愿数据类型
 - `InnerMessage` - 内心留言数据类型
 - `ChatMessage` - 聊天消息数据类型

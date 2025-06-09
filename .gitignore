@@ -132,3 +132,7 @@ temp/
 # 测试和mock数据
 test-results/
 mock-data/
+# Environment Variables
+.env
+.env.local
+.env.*.local

@@ -1,7 +1,10 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import Link from "next/link"
+import { wishesApi, messagesApi, chatApi, type Wish, type InnerMessage, type ChatMessage } from "../lib/api"
+import { useApiAction } from "../hooks/useApi"
+import { config } from "../lib/config"
 
 // Simple icon components to replace lucide-react
 const Heart = ({ className = "w-6 h-6" }: { className?: string }) => (
@@ -102,7 +105,7 @@ const Skiing = ({ className = "w-6 h-6" }: { className?: string }) => (
 // 小羊图标组件
 const Sheep = ({ className = "w-6 h-6" }: { className?: string }) => (
   <svg className={className} fill="currentColor" viewBox="0 0 24 24">
-    <path d="M20 8c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zM4 8c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm8-2c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm4 2c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm-8 0c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm4 2c-2.76 0-5 2.24-5 5v3c0 1.1.9 2 2 2h6c1.1 0 2-.9 2-2v-3c0-2.76-2.24-5-5-5zm-2 8v-1h4v1h-4zm-1-2v-1c0-1.66 1.34-3 3-3s3 1.34 3 3v1h-6z"/>
+    <path d="M20 8c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm-2.2 8.6L15 13l1.2-1.4c.4-.5 1.1-.6 1.6-.2.5.4.6 1.1.2 1.6L16.7 15l2.1 2.1c.4.4.4 1 0 1.4-.2.2-.5.3-.7.3s-.5-.1-.7-.3L15 16.1l-2.4 2.8c-.4.5-1.1.6-1.6.2-.5-.4-.6-1.1-.2-1.6L12.1 16l-1.7-1.7-3.2 3.2c-.2.2-.5.3-.7.3s-.5-.1-.7-.3c-.4-.4-.4-1 0-1.4l3.2-3.2L7.3 11l-2.1 2.1c-.4.4-1 .4-1.4 0-.2-.2-.3-.5-.3-.7s.1-.5.3-.7L5.2 10.3l1.4-1.2c.5-.4 1.2-.3 1.6.2l.6.8 2-2.4c.4-.5 1.1-.5 1.6-.1.5.4.5 1.1.1 1.6l-1.7 2.4z"/>
   </svg>
 )
 
@@ -203,7 +206,9 @@ export default function AngelHeartStation() {
   const [isLoading, setIsLoading] = useState(true)
   const [isFirstVisit, setIsFirstVisit] = useState(true)
   const [isClient, setIsClient] = useState(false)
-  console.log("Rendering with isLoading:", isLoading, "fadeIn:", fadeIn)
+  
+  // 移除console.log以避免无限渲染时的日志污染
+  // console.log("Rendering with isLoading:", isLoading, "fadeIn:", fadeIn)
 
   const [selectedMood, setSelectedMood] = useState<string | null>(null)
   const [currentStory, setCurrentStory] = useState(0)
@@ -310,10 +315,148 @@ export default function AngelHeartStation() {
 
   // 滚动动画观察器
   const observerRef = useRef<IntersectionObserver | null>(null)
+  
+  // 聊天滚动控制
+  const chatMessagesEndRef = useRef<HTMLDivElement>(null)
+
+  // API hooks
+  const createWishAction = useApiAction<{ text: string; author: string }, Wish>()
+  const likeWishAction = useApiAction<{ id: string }, { likes: number }>()
+  const createMessageAction = useApiAction<{ text: string; author: string; color: string }, InnerMessage>()
+  const sendHugAction = useApiAction<{ id: string }, { hugs: number }>()
+  const sendChatAction = useApiAction<{ message: string; sessionId: string }, { userMessage: ChatMessage; aiMessage: ChatMessage }>()
+
+  // 会话ID管理
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null)
+  const [apiConnected, setApiConnected] = useState(false)
+
+  // 创建或重新创建聊天会话
+  const createChatSession = useCallback(async () => {
+    try {
+      console.log('Creating new chat session...')
+      const sessionResponse = await chatApi.createSession()
+      console.log('Session creation response:', sessionResponse)
+      
+      if (sessionResponse.success && sessionResponse.data) {
+        setCurrentSessionId(sessionResponse.data.sessionId)
+        console.log('✅ Chat session created successfully:', sessionResponse.data.sessionId)
+        return sessionResponse.data.sessionId
+      } else {
+        console.error('❌ Failed to create chat session:', sessionResponse)
+        throw new Error('Failed to create chat session')
+      }
+    } catch (error) {
+      console.error('❌ Error creating chat session:', error)
+      throw error
+    }
+  }, [])
+
+  // 初始化数据加载
+  const loadInitialData = useCallback(async () => {
+    try {
+      console.log('Attempting to connect to:', `${config.API_BASE_URL}/health`)
+      
+      // 测试API连接
+      const healthResponse = await fetch(`${config.API_BASE_URL}/health`, {
+        method: 'GET',
+        mode: 'cors',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+      
+      console.log('Health response status:', healthResponse.status)
+      console.log('Health response headers:', healthResponse.headers)
+      
+      if (!healthResponse.ok) {
+        throw new Error(`Backend not available: ${healthResponse.status} ${healthResponse.statusText}`)
+      }
+      
+      const healthData = await healthResponse.text()
+      console.log('Health response data:', healthData)
+      
+      setApiConnected(true)
+
+      // 加载心愿列表
+      const wishesResponse = await wishesApi.getList(1, 10, 'latest')
+      console.log('Wishes API Response:', wishesResponse)
+      if (wishesResponse.success && wishesResponse.data) {
+        // 转换API数据格式以适配现有UI
+        const adaptedWishes = wishesResponse.data.items.map((wish: Wish, index: number) => ({
+          id: index + 1, // 使用数字ID以兼容UI
+          text: wish.text,
+          author: wish.author,
+          likes: wish.likes,
+          category: "API数据",
+          _id: wish._id // 保留原始ID用于API调用
+        }))
+        console.log('Adapted Wishes:', adaptedWishes)
+        setWishes(adaptedWishes)
+      }
+
+      // 加载内心留言
+      const messagesResponse = await messagesApi.getList(1, 10)
+      console.log('Messages API Response:', messagesResponse)
+      if (messagesResponse.success && messagesResponse.data) {
+        // 转换API数据格式以适配现有UI
+        const adaptedMessages = messagesResponse.data.items.map((msg: InnerMessage, index: number) => ({
+          id: index + 1, // 使用数字ID以兼容UI
+          text: msg.text,
+          author: msg.author,
+          color: msg.color,
+          position: { 
+            x: 15 + (index * 15) % 70, 
+            y: 25 + (index * 10) % 50 
+          },
+          hugs: msg.hugs,
+          replies: msg.replies.map((reply, replyIndex) => ({
+            id: replyIndex + 1, // 使用数字ID以兼容UI
+            text: reply.text,
+            author: reply.author
+          })),
+          _id: msg._id // 保留原始ID用于API调用
+        }))
+        console.log('Adapted Messages:', adaptedMessages)
+        setInnerMessages(adaptedMessages)
+      }
+
+      // 创建聊天会话
+      await createChatSession()
+
+      // 加载统计数据
+      const [wishStatsResponse, messageStatsResponse] = await Promise.all([
+        wishesApi.getStats(),
+        messagesApi.getStats()
+      ])
+      
+      console.log('Wish Stats:', wishStatsResponse)
+      console.log('Message Stats:', messageStatsResponse)
+      
+      // 这些统计数据可以用于在UI中显示总数等信息
+    } catch (error) {
+      console.error('Failed to load initial data:', error)
+      
+      // 详细的错误诊断
+      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+        console.error('🚨 Network Error Diagnosis:')
+        console.error('1. Check if backend is running on', config.API_BASE_URL)
+        console.error('2. Check CORS configuration on backend')
+        console.error('3. Check if backend listens on 0.0.0.0:3001 not localhost:3001')
+        console.error('4. Check firewall settings')
+        console.error('5. Try accessing', `${config.API_BASE_URL}/health`, 'directly in browser')
+      }
+      
+      setApiConnected(false)
+      // 保留静态数据作为备用
+    }
+  }, [createChatSession])
 
   useEffect(() => {
     // 设置客户端渲染状态
     setIsClient(true)
+    
+    // 加载初始数据
+    loadInitialData()
     
     // 检查是否是首次访问
     const hasVisited = sessionStorage.getItem('hasVisitedMain')
@@ -370,7 +513,7 @@ export default function AngelHeartStation() {
       clearInterval(loadingTimer)
       observerRef.current?.disconnect()
     }
-  }, [])
+  }, [loadInitialData])
 
   const moods = [
     { name: "开心", color: "from-yellow-200 via-orange-200 to-pink-200", animal: CuteBunny },
@@ -429,30 +572,122 @@ export default function AngelHeartStation() {
     }, 3000)
   }
 
-  const handleWishSubmit = () => {
-    if (newWish.trim()) {
-      const wish = {
-        id: wishes.length + 1,
-        text: newWish,
-        author: "匿名天使",
-        likes: 0,
-        category: "新愿望",
+  const handleWishSubmit = async () => {
+    if (!newWish.trim()) return
+
+    try {
+      const response = await wishesApi.create(newWish.trim(), "匿名天使")
+      if (response.success && response.data) {
+        // 将新心愿添加到列表顶部
+        const newWishItem = {
+          id: wishes.length + 1,
+          text: response.data.text,
+          author: response.data.author,
+          likes: response.data.likes,
+          category: "新愿望",
+          _id: response.data._id
+        }
+        setWishes([newWishItem, ...wishes])
+        setNewWish("")
+        
+        // 显示成功提示
+        console.log("心愿提交成功:", response.data)
+      } else {
+        alert("心愿提交失败，请重试")
       }
-      setWishes([...wishes, wish])
-      setNewWish("")
+    } catch (error) {
+      console.error("心愿提交错误:", error)
+      alert("心愿提交失败，请重试")
     }
   }
 
-  const handleSendMessage = () => {
-    if (newMessage.trim()) {
-      const userMessage = {
-        id: chatMessages.length + 1,
-        text: newMessage,
-        isAI: false,
+  const handleSendMessage = async () => {
+    if (!newMessage.trim()) {
+      console.warn("Message is empty")
+      return
+    }
+    
+    if (!currentSessionId) {
+      console.warn("No session ID available, trying to create new session...")
+      try {
+        await createChatSession()
+        if (!currentSessionId) {
+          console.error("Failed to create session")
+          alert("聊天会话创建失败，请刷新页面重试")
+          return
+        }
+      } catch (error) {
+        console.error("Failed to create session:", error)
+        alert("聊天会话创建失败，请刷新页面重试")
+        return
       }
-      setChatMessages([...chatMessages, userMessage])
-      setNewMessage("")
+    }
 
+    const messageText = newMessage.trim()
+    const userMessageId = chatMessages.length + 1
+    const aiMessageId = chatMessages.length + 2
+    
+    // 1. 立即显示用户消息
+    const userMessage = {
+      id: userMessageId,
+      text: messageText,
+      isAI: false,
+    }
+    
+    // 2. 添加AI加载消息
+    const loadingAiMessage = {
+      id: aiMessageId,
+      text: "",
+      isAI: true,
+      isLoading: true, // 标记为加载状态
+    }
+    
+    setChatMessages([...chatMessages, userMessage, loadingAiMessage])
+    setNewMessage("")
+
+    console.log('Sending message:', {
+      message: messageText,
+      sessionId: currentSessionId
+    })
+
+    try {
+      const response = await chatApi.sendMessage(messageText, currentSessionId)
+      console.log('Send message response:', response)
+      
+      if (response.success && response.data) {
+        // 确保响应数据结构正确
+        if (response.data.userMessage && response.data.aiMessage) {
+          // 3. 用真实AI回复替换加载消息
+          const realAiMessage = {
+            id: aiMessageId,
+            text: response.data.aiMessage.text,
+            isAI: true,
+            isLoading: false,
+          }
+          
+          setChatMessages(prev => 
+            prev.map(msg => 
+              msg.id === aiMessageId ? realAiMessage : msg
+            )
+          )
+          
+          console.log("✅ 真实AI消息发送成功:", {
+            userMessage: response.data.userMessage,
+            aiMessage: response.data.aiMessage
+          })
+        } else {
+          console.error("API响应数据结构不正确:", response.data)
+          throw new Error("API响应数据结构不正确")
+        }
+      } else {
+        console.error("API调用失败:", response)
+        throw new Error(`API调用失败: ${response.error || '未知错误'}`)
+      }
+    } catch (error) {
+      console.error("❌ 消息发送错误:", error)
+      console.log("🔄 回退到静态回复模式")
+      
+      // 4. 如果API失败，用静态回复替换加载消息
       setTimeout(() => {
         const responses = [
           "我理解你的感受。每个人都会有这样的时刻，重要的是要相信自己内心的力量。你想聊聊是什么让你有这样的感受吗？💫",
@@ -460,31 +695,102 @@ export default function AngelHeartStation() {
           "谢谢你愿意与我分享。在这个温暖的空间里，你可以自由地表达任何情感。我会一直陪伴着你。✨",
           "你的勇气让我敬佩。能够诚实面对自己的情感，这本身就是一种成长。🦋",
         ]
-        const aiResponse = {
-          id: chatMessages.length + 2,
+        const fallbackAiMessage = {
+          id: aiMessageId,
           text: responses[Math.floor(Math.random() * responses.length)],
           isAI: true,
+          isLoading: false,
         }
-        setChatMessages((prev) => [...prev, aiResponse])
-      }, 1500)
+        
+        setChatMessages(prev => 
+          prev.map(msg => 
+            msg.id === aiMessageId ? fallbackAiMessage : msg
+          )
+        )
+      }, 1000) // 稍微延迟一下，让用户看到加载效果
     }
   }
 
-  const likeWish = (wishId: number) => {
-    setWishes(wishes.map((wish) => (wish.id === wishId ? { ...wish, likes: wish.likes + 1 } : wish)))
+  // 自动滚动到最新消息
+  useEffect(() => {
+    if (chatMessagesEndRef.current) {
+      chatMessagesEndRef.current.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'end'
+      })
+    }
+  }, [chatMessages])
+
+  const likeWish = async (wishId: number) => {
+    const wish = wishes.find(w => w.id === wishId)
+    if (!wish || !(wish as any)._id) {
+      console.error("无法找到心愿ID")
+      return
+    }
+
+    try {
+      const response = await wishesApi.like((wish as any)._id)
+      if (response.success && response.data && typeof response.data.likes === 'number') {
+        // 更新本地状态
+        setWishes(wishes.map((w) => 
+          w.id === wishId ? { ...w, likes: response.data!.likes } : w
+        ))
+        console.log("点赞成功:", response.data)
+      } else {
+        alert("点赞失败，请重试")
+      }
+    } catch (error) {
+      console.error("点赞错误:", error)
+      // 如果API失败，回退到本地更新
+      setWishes(wishes.map((w) => (w.id === wishId ? { ...w, likes: w.likes + 1 } : w)))
+    }
   }
 
-  const handleInnerMessageSubmit = () => {
-    if (newInnerMessage.trim()) {
-      const colors = [
-        "from-pink-200 to-pink-100",
-        "from-blue-200 to-blue-100",
-        "from-green-200 to-green-100",
-        "from-yellow-200 to-yellow-100",
-        "from-purple-200 to-purple-100",
-        "from-orange-200 to-orange-100",
-      ]
+  const handleInnerMessageSubmit = async () => {
+    if (!newInnerMessage.trim()) return
 
+    const colors = [
+      "from-pink-200 to-pink-100",
+      "from-blue-200 to-blue-100",
+      "from-green-200 to-green-100",
+      "from-yellow-200 to-yellow-100",
+      "from-purple-200 to-purple-100",
+      "from-orange-200 to-orange-100",
+    ]
+
+    try {
+      const randomColor = colors[Math.floor(Math.random() * colors.length)]
+      const response = await messagesApi.create(newInnerMessage.trim(), "匿名天使", randomColor)
+      
+      if (response.success && response.data) {
+        // 添加新留言到列表
+        const newMessage = {
+          id: innerMessages.length + 1,
+          text: response.data.text,
+          author: response.data.author,
+          color: response.data.color,
+          position: {
+            x: Math.random() * 60 + 20,
+            y: Math.random() * 50 + 20,
+          },
+          hugs: response.data.hugs,
+          replies: response.data.replies.map((reply: any, index: number) => ({
+            id: index + 1,
+            text: reply.text,
+            author: reply.author
+          })),
+          _id: response.data._id
+        }
+        setInnerMessages([...innerMessages, newMessage])
+        setNewInnerMessage("")
+        
+        console.log("内心留言提交成功:", response.data)
+      } else {
+        alert("留言提交失败，请重试")
+      }
+    } catch (error) {
+      console.error("留言提交错误:", error)
+      // 如果API失败，回退到本地添加
       const message = {
         id: innerMessages.length + 1,
         text: newInnerMessage,
@@ -502,14 +808,73 @@ export default function AngelHeartStation() {
     }
   }
 
-  const handleSendHug = (messageId: number) => {
-    setInnerMessages(innerMessages.map((msg) => (msg.id === messageId ? { ...msg, hugs: msg.hugs + 1 } : msg)))
-    setHugAnimation(messageId)
-    setTimeout(() => setHugAnimation(null), 1000)
+  const handleSendHug = async (messageId: number) => {
+    const message = innerMessages.find(m => m.id === messageId)
+    if (!message || !(message as any)._id) {
+      console.error("无法找到留言ID")
+      return
+    }
+
+    try {
+      const response = await messagesApi.sendHug((message as any)._id)
+      if (response.success && response.data && typeof response.data.hugs === 'number') {
+        // 更新本地状态
+        setInnerMessages(innerMessages.map((msg) => 
+          msg.id === messageId ? { ...msg, hugs: response.data!.hugs } : msg
+        ))
+        setHugAnimation(messageId)
+        setTimeout(() => setHugAnimation(null), 1000)
+        console.log("拥抱发送成功:", response.data)
+      } else {
+        alert("拥抱发送失败，请重试")
+      }
+    } catch (error) {
+      console.error("拥抱发送错误:", error)
+      // 如果API失败，回退到本地更新
+      setInnerMessages(innerMessages.map((msg) => (msg.id === messageId ? { ...msg, hugs: msg.hugs + 1 } : msg)))
+      setHugAnimation(messageId)
+      setTimeout(() => setHugAnimation(null), 1000)
+    }
   }
 
-  const handleReplySubmit = (messageId: number) => {
-    if (newReply.trim()) {
+  const handleReplySubmit = async (messageId: number) => {
+    if (!newReply.trim()) return
+
+    const message = innerMessages.find(m => m.id === messageId)
+    if (!message || !(message as any)._id) {
+      console.error("无法找到留言ID")
+      return
+    }
+
+    try {
+      const response = await messagesApi.reply((message as any)._id, newReply.trim(), "温暖回应者")
+      if (response.success && response.data) {
+        // 更新本地状态
+        setInnerMessages(
+          innerMessages.map((msg) =>
+            msg.id === messageId
+              ? {
+                  ...msg,
+                  replies: [
+                    ...msg.replies,
+                    {
+                      id: msg.replies.length + 1,
+                      text: response.data!.text,
+                      author: response.data!.author,
+                    },
+                  ],
+                }
+              : msg,
+          ),
+        )
+        setNewReply("")
+        console.log("回复提交成功:", response.data)
+      } else {
+        alert("回复提交失败，请重试")
+      }
+    } catch (error) {
+      console.error("回复提交错误:", error)
+      // 如果API失败，回退到本地更新
       setInnerMessages(
         innerMessages.map((msg) =>
           msg.id === messageId
@@ -533,6 +898,30 @@ export default function AngelHeartStation() {
 
   return (
     <div className="min-h-screen relative overflow-hidden">
+      {/* API连接状态指示器 */}
+      <div className="fixed top-4 right-4 z-50 space-y-2">
+        <div className={`px-3 py-1 rounded-full text-sm font-medium transition-all duration-300 ${
+          apiConnected 
+            ? 'bg-green-100 text-green-800 border border-green-200' 
+            : 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+        }`}>
+          {apiConnected ? '🟢 API已连接' : '🟡 使用静态数据'}
+        </div>
+        {/* AI会话状态指示器 */}
+        <div className={`px-3 py-1 rounded-full text-xs font-medium transition-all duration-300 ${
+          currentSessionId 
+            ? 'bg-blue-100 text-blue-800 border border-blue-200' 
+            : 'bg-gray-100 text-gray-800 border border-gray-200'
+        }`}>
+          {currentSessionId ? '💬 AI会话已就绪' : '⏳ AI会话准备中'}
+        </div>
+        {/* AI回复状态指示器 */}
+        {chatMessages.some((msg: any) => msg.isLoading) && (
+          <div className="px-3 py-1 rounded-full text-xs font-medium transition-all duration-300 bg-purple-100 text-purple-800 border border-purple-200 animate-pulse">
+            ⚡ AI正在回复中...
+          </div>
+        )}
+      </div>
       {/* 进场动画 */}
       {isLoading && (
         <div className="fixed inset-0 z-[100] bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 flex items-center justify-center">
@@ -574,13 +963,13 @@ export default function AngelHeartStation() {
             <div className="mb-12">
               <h1
                 className="text-6xl font-bold mb-6 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 bg-clip-text text-transparent animate-pulse-slow"
-                style={{ fontFamily: "'Comic Sans MS', cursive" }}
+                style={{ fontFamily: "'Fredoka One', 'Nunito', 'Patrick Hand', 'Kalam', 'Comic Sans MS', cursive" }}
               >
                 欢迎来到
               </h1>
               <h2
                 className="text-4xl font-bold bg-gradient-to-r from-teal-500 via-cyan-500 to-indigo-500 bg-clip-text text-transparent"
-                style={{ fontFamily: "'Comic Sans MS', cursive" }}
+                style={{ fontFamily: "'Fredoka One', 'Nunito', 'Patrick Hand', 'Kalam', 'Comic Sans MS', cursive" }}
               >
                 Angelzhengjy的心灵驿站
               </h2>
@@ -772,15 +1161,20 @@ export default function AngelHeartStation() {
                 className={`text-center relative transition-all duration-1000 ${fadeIn ? "opacity-100 scale-100" : "opacity-0 scale-90"}`}
               >
                 <h1
-                  className="text-6xl md:text-8xl lg:text-[10rem] font-bold mb-6 md:mb-8 relative bg-gradient-animation px-4"
+                  className="text-6xl md:text-8xl lg:text-[10rem] font-bold mb-6 md:mb-8 relative px-4"
                   style={{
-                    background:
-                      "linear-gradient(45deg, #fbbf24 0%, #f472b6 20%, #a855f7 40%, #3b82f6 60%, #10b981 80%, #fbbf24 100%)",
+                    background: "linear-gradient(to right, rgba(236, 72, 153, 0.7), rgba(168, 85, 247, 0.7), rgba(99, 102, 241, 0.7))",
                     WebkitBackgroundClip: "text",
                     WebkitTextFillColor: "transparent",
-                    backgroundSize: "400% 400%",
-                    filter: "drop-shadow(0 0 20px rgba(168, 85, 247, 0.2))",
-                    fontFamily: "'Comic Sans MS', cursive",
+                    backgroundClip: "text",
+                    WebkitTextStroke: "1px rgba(255, 255, 255, 0.2)",
+                    backdropFilter: "blur(2px)",
+                    WebkitBackdropFilter: "blur(2px)",
+                    fontFamily: "'Dancing Script', 'Satisfy', 'Patrick Hand', cursive",
+                    fontWeight: "600",
+                    letterSpacing: "0.1em",
+                    textShadow: "0 0 20px rgba(236, 72, 153, 0.3), 0 0 40px rgba(168, 85, 247, 0.2), 0 0 60px rgba(99, 102, 241, 0.1), 0 2px 8px rgba(0, 0, 0, 0.1)",
+                    filter: "drop-shadow(0 0 10px rgba(255, 255, 255, 0.1)) drop-shadow(0 0 20px rgba(168, 85, 247, 0.2))",
                   }}
                 >
                   ANGEL
@@ -800,45 +1194,6 @@ export default function AngelHeartStation() {
                   </p>
                 </div>
 
-                <div
-                  className={`relative group cursor-pointer transition-all duration-1000 delay-700 ${fadeIn ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"}`}
-                >
-                  <h3 className="text-2xl md:text-3xl font-bold text-gray-700 mb-6 md:mb-8 px-4">我的艺术空间</h3>
-                  <div
-                    className="w-[90vw] max-w-[720px] h-64 md:h-96 mx-auto bg-gradient-to-br from-white/50 to-white/30 backdrop-blur-xl border border-white/40 flex items-center justify-center relative overflow-hidden hover:scale-102 hover:-translate-y-2 transition-transform duration-300"
-                    style={{
-                      borderRadius: "50% 50% 50% 50% / 60% 60% 40% 40%",
-                      boxShadow: "0 20px 40px rgba(168, 85, 247, 0.1)",
-                    }}
-                  >
-                    <div className="text-center text-gray-500 relative z-10">
-                      <img 
-                        src="/angel-portrait.jpg" 
-                        alt="Angel Portrait" 
-                        className="w-full h-full object-cover object-center"
-                        style={{ 
-                          borderRadius: "inherit",
-                          objectPosition: "center 60%"  // 调整为显示更完整的人物
-                        }}
-                      />
-                    </div>
-
-                    <div className="absolute top-8 left-12 animate-float" style={{ animationDuration: "4s" }}>
-                      <CuteBunny className="w-8 h-8 text-pink-400/60" />
-                    </div>
-                    <div
-                      className="absolute bottom-8 right-12 animate-float"
-                      style={{ animationDuration: "4s", animationDelay: "2s" }}
-                    >
-                      <CuteCat className="w-8 h-8 text-purple-400/60" />
-                    </div>
-
-                    <div
-                      className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-flow"
-                      style={{ borderRadius: "inherit" }}
-                    />
-                  </div>
-                </div>
               </div>
             </section>
 
@@ -848,7 +1203,7 @@ export default function AngelHeartStation() {
                 <div className="text-center mb-16 md:mb-20 scroll-animate">
                   <h2
                     className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 bg-clip-text text-transparent mb-6 md:mb-8 px-4"
-                    style={{ fontFamily: "'Comic Sans MS', cursive" }}
+                    style={{ fontFamily: "'Fredoka One', 'Nunito', 'Patrick Hand', 'Kalam', 'Comic Sans MS', cursive" }}
                   >
                     温暖许愿池
                   </h2>
@@ -1010,7 +1365,7 @@ export default function AngelHeartStation() {
                 <div className="text-center mb-16 md:mb-20 scroll-animate">
                   <h2
                     className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-green-500 via-blue-500 to-purple-500 bg-clip-text text-transparent mb-6 md:mb-8 px-4"
-                    style={{ fontFamily: "'Comic Sans MS', cursive" }}
+                    style={{ fontFamily: "'Fredoka One', 'Nunito', 'Patrick Hand', 'Kalam', 'Comic Sans MS', cursive" }}
                   >
                     治愈故事时光
                   </h2>
@@ -1096,7 +1451,7 @@ export default function AngelHeartStation() {
                 <div className="text-center mb-16 md:mb-20 scroll-animate">
                   <h2
                     className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 bg-clip-text text-transparent mb-6 md:mb-8 px-4"
-                    style={{ fontFamily: "'Comic Sans MS', cursive" }}
+                    style={{ fontFamily: "'Fredoka One', 'Nunito', 'Patrick Hand', 'Kalam', 'Comic Sans MS', cursive" }}
                   >
                     治愈音乐角落
                   </h2>
@@ -1199,7 +1554,7 @@ export default function AngelHeartStation() {
                 <div className="text-center mb-20 scroll-animate">
                   <h2
                     className="text-5xl font-bold bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent mb-8"
-                    style={{ fontFamily: "'Comic Sans MS', cursive" }}
+                    style={{ fontFamily: "'Fredoka One', 'Nunito', 'Patrick Hand', 'Kalam', 'Comic Sans MS', cursive" }}
                   >
                     AI心灵对话
                   </h2>
@@ -1271,7 +1626,19 @@ export default function AngelHeartStation() {
                               borderRadius: message.isAI ? "25px 25px 25px 8px" : "25px 25px 8px 25px",
                             }}
                           >
-                            <p className="text-base leading-relaxed">{message.text}</p>
+                            {/* 显示消息内容或加载动画 */}
+                            {(message as any).isLoading ? (
+                              <div className="flex items-center space-x-4 py-2">
+                                <div className="flex space-x-1 chat-loading-dots">
+                                  <div className="w-2 h-2 bg-indigo-400 rounded-full dot-1"></div>
+                                  <div className="w-2 h-2 bg-purple-400 rounded-full dot-2"></div>
+                                  <div className="w-2 h-2 bg-pink-400 rounded-full dot-3"></div>
+                                </div>
+                                <span className="text-sm text-gray-500 animate-pulse">AI正在思考中...</span>
+                              </div>
+                            ) : (
+                              <p className="text-base leading-relaxed">{message.text}</p>
+                            )}
 
                             {message.isAI && (
                               <div
@@ -1284,6 +1651,8 @@ export default function AngelHeartStation() {
                           </div>
                         </div>
                       ))}
+                      {/* 滚动到底部的目标元素 */}
+                      <div ref={chatMessagesEndRef} />
                     </div>
 
                     <div className="flex space-x-4 relative">
@@ -1333,7 +1702,7 @@ export default function AngelHeartStation() {
                 <div className="text-center mb-20 scroll-animate">
                   <h2
                     className="text-5xl font-bold bg-gradient-to-r from-teal-500 via-cyan-500 to-blue-500 bg-clip-text text-transparent mb-8"
-                    style={{ fontFamily: "'Comic Sans MS', cursive" }}
+                    style={{ fontFamily: "'Fredoka One', 'Nunito', 'Patrick Hand', 'Kalam', 'Comic Sans MS', cursive" }}
                   >
                     内心留言区
                   </h2>
@@ -1769,7 +2138,7 @@ export default function AngelHeartStation() {
                 <div className="text-center mb-20 scroll-animate">
                   <h2
                     className="text-5xl font-bold bg-gradient-to-r from-yellow-500 via-orange-500 to-red-500 bg-clip-text text-transparent mb-8"
-                    style={{ fontFamily: "'Comic Sans MS', cursive" }}
+                    style={{ fontFamily: "'Fredoka One', 'Nunito', 'Patrick Hand', 'Kalam', 'Comic Sans MS', cursive" }}
                   >
                     心情选择区
                   </h2>
@@ -1925,3 +2294,4 @@ export default function AngelHeartStation() {
     </div>
   )
 }
+

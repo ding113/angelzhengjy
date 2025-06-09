@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import Link from 'next/link'
+import { skiingGameApi, type GameScore, type GameStats } from '../../lib/api'
+
 
 // 游戏常量
 const GAME_CONSTANTS = {
@@ -108,6 +110,18 @@ function SnowBored() {
   const [showWelcomeModal, setShowWelcomeModal] = useState(false) // 默认不显示弹窗
   const [isInitialized, setIsInitialized] = useState(false)
   
+  // API相关状态
+  const [leaderboard, setLeaderboard] = useState<GameScore[]>([])
+  const [gameStats, setGameStats] = useState<GameStats | null>(null)
+  const [playerName, setPlayerName] = useState('')
+  const [showScoreSubmit, setShowScoreSubmit] = useState(false)
+  const [showLeaderboard, setShowLeaderboard] = useState(false)
+  
+  // 直接使用API，不用useApiAction（因为它有使用方式问题）
+  const [submittingScore, setSubmittingScore] = useState(false)
+  const [loadingLeaderboard, setLoadingLeaderboard] = useState(false)
+  const [loadingStats, setLoadingStats] = useState(false)
+  
   // 动态游戏尺寸状态
   const [gameSize, setGameSize] = useState({
     width: 800,
@@ -122,16 +136,16 @@ function SnowBored() {
     getRandomObstacleSprite: () => HTMLImageElement
   } | null>(null)
   
-  // 动态游戏常量
+  // 游戏常量 - 稳定的速度设置
   const getDynamicConstants = useCallback(() => {
     const scale = gameSize.scale
     return {
       CANVAS_WIDTH: gameSize.width,
       CANVAS_HEIGHT: gameSize.height,
       SLOPE_ANGLE: 15,
-      MOVEMENT_SPEED: 1.5 * scale,
-      TREE_GENERATION_INTERVAL: Math.max(60, Math.floor(120 / scale)),
-      GRAVITY: 0.2 * scale,
+      MOVEMENT_SPEED: 2.0 * scale, // 增加基础速度，让游戏更有动感
+      TREE_GENERATION_INTERVAL: 80, // 固定间隔，不再基于scale动态变化
+      GRAVITY: 0.15 * scale, // 略减重力，让控制更平滑
       PLAYER_WIDTH: Math.floor(32 * scale),
       PLAYER_HEIGHT: Math.floor(32 * scale),
       OBSTACLE_WIDTH: Math.floor(32 * scale),
@@ -158,6 +172,91 @@ function SnowBored() {
     isGameOver: false,
     lastObstacleGenerationFrame: 0
   })
+
+  // API相关函数
+  const loadLeaderboardData = useCallback(async () => {
+    setLoadingLeaderboard(true)
+    try {
+      const response = await skiingGameApi.getLeaderboard(1, 10)
+      console.log('API Leaderboard Response:', response) // 调试日志
+      if (response && response.success && response.data) {
+        setLeaderboard(response.data.leaderboard || [])
+      } else {
+        console.warn('Invalid API response for leaderboard:', response)
+        setLeaderboard([]) // 设置为空数组
+      }
+    } catch (error) {
+      console.error('Failed to load leaderboard:', error)
+      setLeaderboard([]) // 设置为空数组
+    } finally {
+      setLoadingLeaderboard(false)
+    }
+  }, [])
+
+  const loadGameStats = useCallback(async () => {
+    setLoadingStats(true)
+    try {
+      const response = await skiingGameApi.getStats()
+      console.log('API Stats Response:', response) // 调试日志
+      if (response && response.success && response.data) {
+        setGameStats(response.data)
+      } else {
+        console.warn('Invalid API response for stats:', response)
+        // 设置默认统计数据
+        setGameStats({
+          totalPlayers: 0,
+          totalGames: 0,
+          highestScore: 0,
+          topPlayer: "暂无数据",
+          avgScore: 0,
+          avgDuration: 0
+        })
+      }
+    } catch (error) {
+      console.error('Failed to load game stats:', error)
+      // 设置默认统计数据
+      setGameStats({
+        totalPlayers: 0,
+        totalGames: 0,
+        highestScore: 0,
+        topPlayer: "暂无数据",
+        avgScore: 0,
+        avgDuration: 0
+      })
+    } finally {
+      setLoadingStats(false)
+    }
+  }, [])
+
+  const handleScoreSubmit = useCallback(async () => {
+    if (!playerName.trim()) {
+      alert('请输入玩家姓名')
+      return
+    }
+
+    setSubmittingScore(true)
+    try {
+      // 直接调用API
+      const response = await skiingGameApi.submitScore(playerName.trim(), score, gameTime)
+      console.log('API Submit Response:', response) // 调试日志
+      if (response && response.success) {
+        console.log('Score submitted successfully:', response.data)
+        setShowScoreSubmit(false)
+        // 重新加载排行榜和统计数据
+        await loadLeaderboardData()
+        await loadGameStats()
+        setShowLeaderboard(true)
+      } else {
+        console.warn('Invalid API response for score submit:', response)
+        alert('分数提交失败，请重试')
+      }
+    } catch (error) {
+      console.error('Failed to submit score:', error)
+      alert('分数提交失败，请重试')
+    } finally {
+      setSubmittingScore(false)
+    }
+  }, [playerName, score, gameTime, loadLeaderboardData, loadGameStats])
 
   // 计算适合的游戏尺寸
   const calculateGameSize = useCallback(() => {
@@ -334,27 +433,23 @@ function SnowBored() {
       if (gameStateRef.current.isGameOver) return
 
       const { player, obstacles, trailPoints } = gameStateRef.current
-      const currentTime = Date.now()
+      const constants = getDynamicConstants()
       
-      // 速度增加逻辑 - 确保速度增长是可控的
-      if (currentTime - gameStateRef.current.lastSpeedIncreaseTime >= 3000) { // 增加到3秒
-        gameStateRef.current.gameSpeedMultiplier = Math.min(
-          gameStateRef.current.gameSpeedMultiplier + 0.03, // 减少速度增长
-          2.5 // 设置最大速度倍数
-        )
-        gameStateRef.current.obstacleGenerationInterval = Math.max(
-          Math.floor(40 / gameSize.scale), // 调整最小间隔
-          gameStateRef.current.obstacleGenerationInterval - 3
-        )
-        gameStateRef.current.lastSpeedIncreaseTime = currentTime
-      }
+      // 简化的速度系统 - 保持恒定的基础速度
+      const gameTimeElapsed = Math.floor((Date.now() - gameStateRef.current.startTime) / 1000)
+      
+      // 每10秒微调增加速度，幅度很小
+      const speedIncrement = Math.floor(gameTimeElapsed / 10) * 0.05 // 每10秒增加5%
+      gameStateRef.current.gameSpeedMultiplier = Math.min(1.0 + speedIncrement, 1.5) // 最大1.5倍速度
 
-      // 玩家移动逻辑 - 确保移动速度与scale一致
-      const currentMovementSpeed = constants.MOVEMENT_SPEED
+      // 固定的障碍物生成间隔，不再动态调整
+      gameStateRef.current.obstacleGenerationInterval = constants.TREE_GENERATION_INTERVAL
+
+      // 玩家移动逻辑 - 使用常量，保持一致性
       if (player.isMovingUp) {
-        player.velocityY = Math.max(player.velocityY - 0.15 * gameSize.scale, -currentMovementSpeed)
+        player.velocityY = Math.max(player.velocityY - constants.GRAVITY * 1.5, -2.0 * gameSize.scale)
       } else {
-        player.velocityY = Math.min(player.velocityY + constants.GRAVITY, currentMovementSpeed)
+        player.velocityY = Math.min(player.velocityY + constants.GRAVITY, 2.0 * gameSize.scale)
       }
 
       player.y += player.velocityY
@@ -363,8 +458,14 @@ function SnowBored() {
       const minY = 50 * gameSize.scale
       const maxY = gameSize.height - 70 * gameSize.scale
       
-      if (player.y < minY) player.y = minY
-      if (player.y > maxY) player.y = maxY
+      if (player.y < minY) {
+        player.y = minY
+        player.velocityY = Math.max(0, player.velocityY)
+      }
+      if (player.y > maxY) {
+        player.y = maxY
+        player.velocityY = Math.min(0, player.velocityY)
+      }
 
       // 滑雪轨迹
       trailPoints.unshift({ x: player.x, y: player.y + 10 * gameSize.scale })
@@ -372,28 +473,28 @@ function SnowBored() {
         trailPoints.pop()
       }
 
-      // 移动障碍物和轨迹点
-      const actualMovementSpeed = constants.MOVEMENT_SPEED * gameStateRef.current.gameSpeedMultiplier
+      // 固定的移动速度 - 不再频繁变化
+      const baseMovementSpeed = constants.MOVEMENT_SPEED * gameStateRef.current.gameSpeedMultiplier
       
+      // 移动障碍物和轨迹点
       gameStateRef.current.obstacles = obstacles.map(obstacle => ({
         ...obstacle,
-        x: obstacle.x - actualMovementSpeed
+        x: obstacle.x - baseMovementSpeed
       })).filter(obstacle => obstacle.x > -100 * gameSize.scale)
 
       gameStateRef.current.trailPoints = trailPoints.map(point => ({
         ...point,
-        x: point.x - actualMovementSpeed
+        x: point.x - baseMovementSpeed
       })).filter(point => point.x > 0)
 
-      // 障碍物生成逻辑 - 确保稳定的生成间隔
+      // 简化的障碍物生成 - 固定间隔
       const framesSinceLastObstacle = gameStateRef.current.frameCount - gameStateRef.current.lastObstacleGenerationFrame
       if (framesSinceLastObstacle >= gameStateRef.current.obstacleGenerationInterval) {
-        // 只有在游戏正常运行时才生成障碍物
-        if (!gameStateRef.current.isGameOver && gameStateRef.current.frameCount > 60) {
+        if (!gameStateRef.current.isGameOver && gameStateRef.current.frameCount > 60 && spritesRef.current) {
           gameStateRef.current.obstacles.push({
-            x: gameSize.width + 100 * gameSize.scale, // 确保在屏幕外生成
+            x: gameSize.width + 50 * gameSize.scale,
             y: Math.random() * (gameSize.height - 150 * gameSize.scale) + 75 * gameSize.scale,
-            sprite: spritesRef.current?.getRandomObstacleSprite() || gameStateRef.current.obstacles[0]?.sprite
+            sprite: spritesRef.current.getRandomObstacleSprite()
           })
           gameStateRef.current.lastObstacleGenerationFrame = gameStateRef.current.frameCount
         }
@@ -407,20 +508,27 @@ function SnowBored() {
         return
       }
 
-      // 分数增加
-      if (gameStateRef.current.frameCount % 60 === 0) {
-        gameStateRef.current.score += 10
-      }
+      // 简化分数计算
+      const currentScore = Math.floor(gameTimeElapsed * 12 + gameStateRef.current.frameCount / 10)
+      gameStateRef.current.score = currentScore
 
       gameStateRef.current.frameCount++
     }
 
-    const gameLoop = () => {
+    const gameLoop = (currentTime: number) => {
       if (gameStateRef.current.isGameOver && animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current)
         animationFrameRef.current = null
         return
       }
+
+      // 稳定的帧率控制（可选，用于限制FPS）
+      // const deltaTime = currentTime - (gameStateRef.current.lastFrameTime || currentTime)
+      // if (deltaTime < 16.67) { // 限制为60FPS
+      //   animationFrameRef.current = requestAnimationFrame(gameLoop)
+      //   return
+      // }
+      // gameStateRef.current.lastFrameTime = currentTime
 
       ctx.clearRect(0, 0, gameSize.width, gameSize.height)
       
@@ -469,7 +577,7 @@ function SnowBored() {
         trailPoints: [],
         frameCount: 0,
         startTime: currentTime,
-        gameSpeedMultiplier: 1, // 重置为初始速度
+        gameSpeedMultiplier: 1.0, // 确保重置为精确的初始速度
         obstacleGenerationInterval: constants.TREE_GENERATION_INTERVAL,
         lastSpeedIncreaseTime: currentTime,
         score: 0,
@@ -556,7 +664,10 @@ function SnowBored() {
         img.crossOrigin = "anonymous"
         img.src = src
         img.onload = () => resolve(img)
-        img.onerror = reject
+        img.onerror = (error) => {
+          console.error('Image load failed:', src, error)
+          reject(new Error(`Failed to load image: ${src}`))
+        }
       })
     }
 
@@ -601,6 +712,9 @@ function SnowBored() {
 
         setIsInitialized(true)
         initGameLoop(ctx)
+        
+        // 加载游戏统计数据
+        loadGameStats()
       } catch (error) {
         console.error('Failed to initialize game:', error)
       }
@@ -656,18 +770,38 @@ function SnowBored() {
               maxHeight: '60vh'
             }}
           />
-          {gameOver && (
+          {gameOver && !showScoreSubmit && !showLeaderboard && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/75 rounded-lg">
-              <div className="text-white text-center p-4">
+              <div className="text-white text-center p-4 space-y-4">
+                <div className="text-lg mb-4">
+                  <div>最终分数: {score}</div>
+                  <div>游戏时间: {gameTime}s</div>
+                </div>
+                <div className="flex gap-2 justify-center">
+                  <button
+                    onClick={() => setShowScoreSubmit(true)}
+                    className="px-4 py-3 bg-green-600 text-white rounded hover:bg-green-700 transition-colors shadow-lg text-sm"
+                    style={{ fontFamily: '"Press Start 2P", cursive' }}
+                  >
+                    提交分数
+                  </button>
+                  <button
+                    onClick={restartGame}
+                    className="px-4 py-3 bg-black text-white rounded hover:bg-gray-800 transition-colors shadow-lg text-sm"
+                    style={{ fontFamily: '"Press Start 2P", cursive' }}
+                  >
+                    重新开始
+                  </button>
+                </div>
                 <button
-                  onClick={restartGame}
-                  className="px-4 py-3 bg-black text-white rounded hover:bg-gray-800 transition-colors shadow-lg"
-                  style={{ 
-                    fontFamily: '"Press Start 2P", cursive',
-                    fontSize: `${Math.max(10, 14 * gameSize.scale)}px`
+                  onClick={() => {
+                    loadLeaderboardData()
+                    setShowLeaderboard(true)
                   }}
+                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors shadow-lg text-xs"
+                  style={{ fontFamily: '"Press Start 2P", cursive' }}
                 >
-                  Play Again
+                  查看排行榜
                 </button>
               </div>
             </div>
@@ -722,6 +856,124 @@ function SnowBored() {
           温馨提醒 💫
         </button>
       </div>
+
+      {/* 分数提交弹窗 */}
+      {showScoreSubmit && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white/95 backdrop-blur-xl rounded-3xl p-8 max-w-md mx-4 border-3 border-[#d4a5a0]/60 shadow-2xl">
+            <h3 className="text-2xl font-bold text-[#a89688] mb-6 text-center">提交您的分数</h3>
+            <div className="space-y-4">
+              <div className="text-center text-[#9a8d7d]">
+                <div>分数: <span className="font-bold text-[#a89688]">{score}</span></div>
+                <div>时间: <span className="font-bold text-[#a89688]">{gameTime}s</span></div>
+              </div>
+              <input
+                type="text"
+                placeholder="请输入您的姓名"
+                value={playerName}
+                onChange={(e) => setPlayerName(e.target.value)}
+                className="w-full px-4 py-3 border-2 border-[#d4a5a0]/40 rounded-lg focus:border-[#d4a5a0] outline-none bg-white/70"
+                maxLength={20}
+              />
+              <div className="flex gap-3">
+                <button
+                  onClick={handleScoreSubmit}
+                  disabled={submittingScore || !playerName.trim()}
+                  className="flex-1 py-3 bg-gradient-to-r from-[#d4a5a0] to-[#c8b8d5] text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 transition-transform"
+                >
+                  {submittingScore ? '提交中...' : '提交'}
+                </button>
+                <button
+                  onClick={() => setShowScoreSubmit(false)}
+                  className="flex-1 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                >
+                  取消
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 排行榜弹窗 */}
+      {showLeaderboard && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white/95 backdrop-blur-xl rounded-3xl p-8 max-w-2xl mx-4 border-3 border-[#d4a5a0]/60 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-2xl font-bold text-[#a89688]">滑雪排行榜</h3>
+              <button
+                onClick={() => setShowLeaderboard(false)}
+                className="text-[#a89688] hover:text-[#9a8d7d] text-2xl"
+              >
+                ×
+              </button>
+            </div>
+            
+            {/* 游戏统计 */}
+            {gameStats && (
+              <div className="mb-6 p-4 bg-gradient-to-r from-[#d4a5a0]/20 to-[#c8b8d5]/20 rounded-lg">
+                <h4 className="font-bold text-[#a89688] mb-2">游戏统计</h4>
+                <div className="grid grid-cols-2 gap-4 text-sm text-[#9a8d7d]">
+                  <div>总玩家数: <span className="font-bold">{gameStats.totalPlayers}</span></div>
+                  <div>总游戏数: <span className="font-bold">{gameStats.totalGames}</span></div>
+                  <div>最高分: <span className="font-bold">{gameStats.highestScore}</span></div>
+                  <div>冠军: <span className="font-bold">{gameStats.topPlayer}</span></div>
+                </div>
+              </div>
+            )}
+
+            {/* 排行榜 */}
+            {loadingLeaderboard ? (
+              <div className="text-center py-8 text-[#9a8d7d]">加载中...</div>
+            ) : (
+              <div className="space-y-3">
+                {leaderboard.map((entry, index) => (
+                  <div
+                    key={entry._id}
+                    className={`flex items-center justify-between p-4 rounded-lg ${
+                      index < 3 
+                        ? 'bg-gradient-to-r from-yellow-100 to-yellow-50 border-2 border-yellow-300' 
+                        : 'bg-gray-50 border border-gray-200'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-4">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold ${
+                        index === 0 ? 'bg-yellow-500' :
+                        index === 1 ? 'bg-gray-400' :
+                        index === 2 ? 'bg-orange-400' : 'bg-gray-300'
+                      }`}>
+                        {index + 1}
+                      </div>
+                      <div>
+                        <div className="font-bold text-[#a89688]">{entry.playerName}</div>
+                        <div className="text-sm text-[#9a8d7d]">
+                          {new Date(entry.createdAt).toLocaleDateString()}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-bold text-[#a89688]">{entry.score} 分</div>
+                      <div className="text-sm text-[#9a8d7d]">{entry.duration}s</div>
+                    </div>
+                  </div>
+                ))}
+                {leaderboard.length === 0 && (
+                  <div className="text-center py-8 text-[#9a8d7d]">暂无排行榜数据</div>
+                )}
+              </div>
+            )}
+            
+            <div className="mt-6 text-center">
+              <button
+                onClick={() => setShowLeaderboard(false)}
+                className="px-6 py-2 bg-gradient-to-r from-[#d4a5a0] to-[#c8b8d5] text-white rounded-lg hover:scale-105 transition-transform"
+              >
+                关闭
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
